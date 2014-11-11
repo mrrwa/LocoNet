@@ -1,0 +1,23 @@
+Acknowledgements: People who've contributed to the MRRWA Embedded Loconet Project
+
+Alex Shepherd
+	Embedded Loconet
+	Arduino port
+	many examples
+Stefan Bormann
+	FREMO support
+	Hardware UART support
+Ron W. Auld
+	utility/ln_opc.h - header file with all the symbolic definitions and packet structs
+John Plocher
+	EmbeddedLoconet Arduino	proof of concept
+Damian Philipp
+	Patches
+Tom Knox
+	MEGA support (TIMER5 definitions in ln_config.h)
+Digitrax
+	Loconet Personal Edition
+Uhlenbrock Elektronik
+	FREMO FREDi packet format
+
+
