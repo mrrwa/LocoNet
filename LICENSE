@@ -1,0 +1,53 @@
+Portions Copyright (C) 2001 Ron W. Auld
+Portions Copyright (C) 2002-2014 Alex Shepherd
+Portions Copyright (C) 2008 John Plocher
+Portions Copyright (C) 2011 Jeffrey Marten Gillmor
+Portions Copyright (C) 2013 Damian Philipp
+Portions Copyright (C) 2014 Tom Knox
+Portions Copyright (C) 1997 Digitrax Inc.
+Portions Copyright (C) 2010 Uhlenbrock Elektronik GmbH
+
+This library is free software; you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as
+published by the Free Software Foundation; either version 2.1 of
+the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, you can get a copy online
+at http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+or write to the Free Software Foundation, Inc., 59 Temple Place,
+Suite 330, Boston, MA  02111-1307 USA
+
+IMPORTANT:
+
+Some of the message formats used in this code are Copyright Digitrax,
+Inc.  and are used with permission as part of the MRRwA (previously
+EmbeddedLocoNet) project.  That permission does not extend to uses
+in other software products. If you wish to use this code, algorithm
+or these message formats outside of MRRwA, please contact Digitrax
+Inc, for specific permission.
+
+Note: The sale any LocoNet device hardware (including bare PCB's)
+that uses this or any other LocoNet software, requires testing and
+certification by Digitrax Inc. and will be subject to a licensing
+agreement.
+
+Please contact Digitrax Inc. for details.
+
+
+IMPORTANT:
+
+Some of the message formats used in this code are Copyright Uhlenbrock
+Elektronik GmbH and are used with permission as part of the MRRwA
+(previously EmbeddedLocoNet) project.  That permission does not
+extend to uses in other software products. If you wish to use this
+code, algorithm or these message formats outside of MRRwA, please
+contact Copyright Uhlenbrock Elektronik GmbH, for specific permission.
+
+
+
