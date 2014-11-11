@@ -1,7 +1,7 @@
 Acknowledgements: People who've contributed to the MRRWA Embedded Loconet Project
 
 Alex Shepherd
-	Embedded Loconet
+	EmbeddedLoconet
 	Arduino port
 	many examples
 Stefan Bormann
