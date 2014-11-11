@@ -1,4 +1,4 @@
-The Embeded Loconet Library provides functions that manage the
+The EmbededLocoNet Library provides functions that manage the
 sending and receiving of LocoNet packets.
 
 As bytes are received from the LocoNet by an interrupt driven
