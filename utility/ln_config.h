@@ -31,7 +31,7 @@
  *
  * Thanks to the neatness and modularity of Alex, all the changes are isolated
  * to just the ln_config.h (this) file!
- ****************************************************************************/
+ ****************************************************************************
  */
 
 // For the UNO:
