@@ -41,8 +41,6 @@
  ****************************************************************************
  */
 
-
-
 // jmp
 // figure out what board we are building for
 // TODO:  Add support for Leo and others...
