@@ -35,7 +35,7 @@
 
 #define LNCV_COUNT 16
 
-// Art.-Nr.: 50010
+// Item Number (Art.-Nr.): 50010
 #define ARTNR 5001
 
 //uint16_t moduleAddr;
@@ -120,27 +120,27 @@ int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
 	Serial.print(")");
 	// Step 1: Can this be addressed to me?
 	// All ReadRequests contain the ARTNR. For starting programming, we do not accept the broadcast address.
-			if (programmingMode) {
-				if (ArtNr == ARTNR) {
-					if (lncvAddress < 16) {
-						lncvValue = lncv[lncvAddress];
-						Serial.print(" LNCV Value: ");
-						Serial.print(lncvValue);
-						Serial.print("\n");
-						return LNCV_LACK_OK;
-					} else {
-						// Invalid LNCV address, request a NAXK
-						return LNCV_LACK_ERROR_UNSUPPORTED;
-					}
-				} else {
-					Serial.print("ArtNr invalid.\n");
-					return -1;
-				}
+	if (programmingMode) {
+		if (ArtNr == ARTNR) {
+			if (lncvAddress < 16) {
+				lncvValue = lncv[lncvAddress];
+				Serial.print(" LNCV Value: ");
+				Serial.print(lncvValue);
+				Serial.print("\n");
+				return LNCV_LACK_OK;
 			} else {
-				Serial.print("Ignoring Request.\n");
-				return -1;
+				// Invalid LNCV address, request a NAXK
+				return LNCV_LACK_ERROR_UNSUPPORTED;
 			}
+		} else {
+			Serial.print("ArtNr invalid.\n");
+			return -1;
 		}
+	} else {
+		Serial.print("Ignoring Request.\n");
+		return -1;
+	}
+}
 
 int8_t notifyLNCVprogrammingStart(uint16_t & ArtNr, uint16_t & ModuleAddress) {
 	// Enter programming mode. If we already are in programming mode,
@@ -169,28 +169,28 @@ int8_t notifyLNCVwrite(uint16_t ArtNr, uint16_t lncvAddress,
 		uint16_t lncvValue) {
 	Serial.print("notifyLNCVwrite, ");
 	//  dumpPacket(ub);
-			if (!programmingMode) {
-				Serial.print("not in Programming Mode.\n");
-				return -1;
-			}
+	if (!programmingMode) {
+		Serial.print("not in Programming Mode.\n");
+		return -1;
+	}
 
-			if (ArtNr == ARTNR) {
-				Serial.print("Artnr OK, ");
+	if (ArtNr == ARTNR) {
+		Serial.print("Artnr OK, ");
 
-				if (lncvAddress < 16) {
-					lncv[lncvAddress] = lncvValue;
-					return LNCV_LACK_OK;
-				}
-				else {
-					return LNCV_LACK_ERROR_UNSUPPORTED;
-				}
-
-			}
-			else {
-				Serial.print("Artnr Invalid.\n");
-				return -1;
-			}
+		if (lncvAddress < 16) {
+			lncv[lncvAddress] = lncvValue;
+			return LNCV_LACK_OK;
 		}
+		else {
+			return LNCV_LACK_ERROR_UNSUPPORTED;
+		}
+
+	}
+	else {
+		Serial.print("Artnr Invalid.\n");
+		return -1;
+	}
+}
 
 	/**
 	 * Notifies the code on the reception of a request to end programming mode

@@ -3,7 +3,7 @@
  *  2014 John Plocher - Public Domain
  *
  *  Circuit:
- *    Loconet on pins 8 (RX) and 7 (TX) (via a LocoShield or similar)
+ *    Loconet on pins 8 (RX on UNO) and 7 (TX) (via a LocoShield or similar)
  *    Push Buttons on pins 5 and 6 (making a connection to ground when pressed)
  *    LED on pin 13 (lit when NORMAL)
  *
@@ -15,22 +15,22 @@
  *        make sure the LED is on when the turnout is Normal, even if someone else controls
  *          the turnout with a throttle or JMRI...
  *
- *    The turnout number is hardcoded in this sketch
+ *    The turnout number is arbitrary and should be changed to match your layout...
  */
 
 #include <LocoNet.h>
 
-// #define LN_TX_PIN     47	// MEGA
-// #define LN_TX_PIN     6		// UNO
+// #define LN_TX_PIN     47  // MEGA
+// #define LN_TX_PIN     6   // UNO
 #define LN_TX_PIN     7		// LocoShield
 //      LN_RX_PIN     Hardcoded in library for UNO and MEGA.  Will not work with Leonardo (yet)
 
 #define LED_PIN      13
 #define N_BUTTON_PIN  6
 #define D_BUTTON_PIN  5
-#define LN_TURNOUT   25
+#define LN_TURNOUT   25  // change to match your layout...
 
-// Loconet turnout position definitions
+// Loconet turnout position definitions to make code easier to read
 #define TURNOUT_NORMAL     1  // aka closed
 #define TURNOUT_DIVERGING  0  // thrown
 
@@ -41,12 +41,14 @@ int     led_state;         // on (1) or off (0)
 int     nbutton, dbutton;  // on (1) or off (0)
 int     last_nbutton, last_dbutton;  // only want to generate one loconet message per button press
 
+
+// Construct a Loconet packet that requests a turnout to set/change its state
 void sendOPC_SW_REQ(int address, byte dir, byte on) {
     lnMsg SendPacket ;
     
     int sw2 = 0x00;
-    if (dir) sw2 |= B00100000;
-    if (on)  sw2 |= B00010000;
+    if (dir == TURNOUT_NORMAL) { sw2 |= B00100000; }
+    if (on) { sw2 |= B00010000; }
     sw2 |= (address >> 7) & 0x0F;
     
     SendPacket.data[ 0 ] = OPC_SW_REQ ;
@@ -158,5 +160,4 @@ void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction )
 
 void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction )
 { if (Address == LN_TURNOUT) { led_state = Direction; } }
-
 

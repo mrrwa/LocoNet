@@ -9,8 +9,7 @@
 
 lnMsg        *LnPacket;
 
-void setup()
-{
+void setup() {
   // First initialize the LocoNet interface
   LocoNet.init();
 
@@ -19,12 +18,10 @@ void setup()
   Serial.println("LocoNet Monitor");
 }
 
-void loop()
-{  
+void loop() {  
   // Check for any received LocoNet packets
   LnPacket = LocoNet.receive() ;
-  if( LnPacket )
-  {
+  if( LnPacket ) {
       // First print out the packet in HEX
     Serial.print("RX: ");
     uint8_t msgLen = getLnMsgSize(LnPacket); 
@@ -40,15 +37,15 @@ void loop()
     }
     
       // If this packet was not a Switch or Sensor Message then print a new line 
-    if(!LocoNet.processSwitchSensorMessage(LnPacket))
+    if(!LocoNet.processSwitchSensorMessage(LnPacket)) {
       Serial.println();
+    }
   }
 }
 
   // This call-back function is called from LocoNet.processSwitchSensorMessage
   // for all Sensor messages
-void notifySensor( uint16_t Address, uint8_t State )
-{
+void notifySensor( uint16_t Address, uint8_t State ) {
   Serial.print("Sensor: ");
   Serial.print(Address, DEC);
   Serial.print(" - ");
@@ -57,8 +54,7 @@ void notifySensor( uint16_t Address, uint8_t State )
 
   // This call-back function is called from LocoNet.processSwitchSensorMessage
   // for all Switch Request messages
-void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
-{
+void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) {
   Serial.print("Switch Request: ");
   Serial.print(Address, DEC);
   Serial.print(':');
@@ -69,8 +65,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction )
 
   // This call-back function is called from LocoNet.processSwitchSensorMessage
   // for all Switch Report messages
-void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction )
-{
+void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction ) {
   Serial.print("Switch Report: ");
   Serial.print(Address, DEC);
   Serial.print(':');
@@ -81,8 +76,7 @@ void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction )
 
   // This call-back function is called from LocoNet.processSwitchSensorMessage
   // for all Switch State messages
-void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction )
-{
+void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction ) {
   Serial.print("Switch State: ");
   Serial.print(Address, DEC);
   Serial.print(':');

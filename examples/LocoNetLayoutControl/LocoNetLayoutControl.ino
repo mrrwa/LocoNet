@@ -4,10 +4,10 @@
  * A standalone controller which will generate LocoNet commands when a button is pressed to:
  *   Turn track power on and off, with a LED to indicate state.
  *   Generate a master E-Stop, with a LED to indicate state.
- *   Clear all slots in a command station
+ *   Clear all slots in an attached command station
  *
  * RX and TX Loconet
- *   Hardcoded to use ICP pin 8 (port PINB bit PB0) for LocoNet input and a user define'd pin for output/transmit
+ *   Hardcoded to use ICP pin 8 (Pin PINB bit PB0) for LocoNet input and a user define'd pin for output/transmit
  * 
  * 3 pushbuttons and associated LEDs plus a Loconet Shield
  *
@@ -16,16 +16,16 @@
 
 #include <LocoNet.h>
 
-#define PowerOnPort      2    // Buttons connected to these pins
-#define PowerOffPort     3    // GPON GPOFF and ESTOP as well as Clear All Slots
-#define EStopPort        4
-#define SlotClearPort    5
+#define PowerOnPin      2    // Buttons connected to these pins
+#define PowerOffPin     3    // GPON GPOFF and ESTOP as well as Clear All Slots
+#define EStopPin        4
+#define SlotClearPin    5
 
-#define LNtxPort         6    // LocoNet Transmit pin (LocoShield uses pin7)
+#define LNtxPin         6    // LocoNet Transmit pin (LocoShield uses pin7)
 
-#define PowerOnLEDPort  11    // Assume this pin has a LED+resistor attached...
-#define PowerOffLEDPort 12    // Assume this pin has a LED+resistor attached...
-#define EStopLEDPort    13    // Assume this pin has a LED+resistor attached...
+#define PowerOnLEDPin  11    // Assume this pin has a LED+resistor attached...
+#define PowerOffLEDPin 12    // Assume this pin has a LED+resistor attached...
+#define EStopLEDPin    13    // Assume this pin has a LED+resistor attached...
 
 // Button press state
 // Current
@@ -43,25 +43,25 @@ int lastClear = -1;
 int ClearIt   =  0;           // Should we clear slots when we get a slot status packet?
     
 void setup(){
-    pinMode(PowerOnPort,     INPUT);   
-    pinMode(PowerOffPort,    INPUT);   
-    pinMode(SlotClearPort,   INPUT);   
-    pinMode(EStopPort,       INPUT); 
+    pinMode(PowerOnPin,     INPUT);   
+    pinMode(PowerOffPin,    INPUT);   
+    pinMode(SlotClearPin,   INPUT);   
+    pinMode(EStopPin,       INPUT); 
     
-    pinMode(EStopLEDPort,    OUTPUT); 
-    pinMode(PowerOnLEDPort,  OUTPUT); 
-    pinMode(PowerOffLEDPort, OUTPUT); 
+    pinMode(EStopLEDPin,    OUTPUT); 
+    pinMode(PowerOnLEDPin,  OUTPUT); 
+    pinMode(PowerOffLEDPin, OUTPUT); 
     
-    digitalWrite(PowerOnLEDPort,  0);   // Power is in an unknown state
-    digitalWrite(PowerOffLEDPort, 0);   // 
-    digitalWrite(EStopLEDPort,    0);   // and not estopped
+    digitalWrite(PowerOnLEDPin,  0);   // Power is in an unknown state
+    digitalWrite(PowerOffLEDPin, 0);   // 
+    digitalWrite(EStopLEDPin,    0);   // and not estopped
  
-    // Configure the serial port for 57600 baud
+    // Configure the serial Pin for 57600 baud
     Serial.begin(57600);
     Serial.println("LocoNet Controller");     
     
     // initialize the LocoNet interface
-    LocoNet.init(LNtxPort);
+    LocoNet.init(LNtxPin);
 }                   
 
 void setLNTurnout(int address, byte dir) {
@@ -147,15 +147,15 @@ void processIncomingLoconetCommand(lnMsg* LnPacket) {
         unsigned char opcode = (int)LnPacket->sz.command;
         if (opcode == OPC_GPON)  {     
             Serial.println("Power ON");     
-            digitalWrite(PowerOnLEDPort, 1);  
-            digitalWrite(PowerOffLEDPort, 0);
-            digitalWrite(EStopLEDPort, 0);
+            digitalWrite(PowerOnLEDPin, 1);  
+            digitalWrite(PowerOffLEDPin, 0);
+            digitalWrite(EStopLEDPin, 0);
         } else if (opcode == OPC_GPOFF) {
             Serial.println("Power OFF");     
-            digitalWrite(PowerOnLEDPort, 0);
-            digitalWrite(PowerOffLEDPort, 1);
+            digitalWrite(PowerOnLEDPin, 0);
+            digitalWrite(PowerOffLEDPin, 1);
         } else if (opcode == OPC_IDLE) {
-            digitalWrite(EStopLEDPort, 1);
+            digitalWrite(EStopLEDPin, 1);
             Serial.println("EStop!"); 
         } else if (opcode == OPC_SL_RD_DATA) {
             if (ClearIt) {
@@ -183,15 +183,15 @@ void loop() {
     }
     // Debounce logic:
     // ...Check for any buttons pushed, delay, read again...
-    GPonButton1  = digitalRead(PowerOnPort);
-    GPoffButton1 = digitalRead(PowerOffPort);
-    EStopButton1 = digitalRead(EStopPort);
-    ClearButton1 = digitalRead(SlotClearPort);
+    GPonButton1  = digitalRead(PowerOnPin);
+    GPoffButton1 = digitalRead(PowerOffPin);
+    EStopButton1 = digitalRead(EStopPin);
+    ClearButton1 = digitalRead(SlotClearPin);
     delay(5);
-    GPonButton2  = digitalRead(PowerOnPort);
-    GPoffButton2 = digitalRead(PowerOffPort);
-    EStopButton2 = digitalRead(EStopPort);
-    ClearButton2 = digitalRead(SlotClearPort);
+    GPonButton2  = digitalRead(PowerOnPin);
+    GPoffButton2 = digitalRead(PowerOffPin);
+    EStopButton2 = digitalRead(EStopPin);
+    ClearButton2 = digitalRead(SlotClearPin);
 
     // ...identical readings mean we have a good result
     if (GPonButton1  == GPonButton2)  { GPonButton  = GPonButton1  ? 0 : 1; }
@@ -239,7 +239,7 @@ void loop() {
                 for (int slot = 0; slot < 120; slot++) {
                     sendOPC_RQ_SL_DATA(slot);
                 }
-                ClearIt = 0;
+                ClearIt = 0;  // race condition?
             }
         }     
     }
