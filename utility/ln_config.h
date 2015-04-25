@@ -100,12 +100,21 @@
 // *****************************************************************************
 #elif defined( _LNET_USE_UNO )
 
+#if defined(__AVR_ATmega32U4__)
+
+#define LN_RX_PORT  PIND
+#define LN_RX_DDR   DDRD
+#define LN_RX_BIT   PORTD4
+
+#else
+
 #define LN_RX_PORT  PINB
 #define LN_RX_DDR   DDRB
 #ifdef PB0	// bug/missing defines (some hardware core's ioXX.h files define one or the other)
 #define LN_RX_BIT   PB0
 #else
 #define LN_RX_BIT   PORTB0
+#endif
 #endif
 
 // From sysdef.h:
