@@ -42,7 +42,7 @@
 #include <avr/interrupt.h>
 #include <string.h>
 #include "ln_config.h"
-#include "loconet.h"
+#include "LocoNet.h"
 #include "ln_buf.h"    
 #include "ln_sw_uart.h"    
 
