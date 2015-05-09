@@ -106,6 +106,13 @@
 #define LN_RX_DDR   DDRD
 #define LN_RX_BIT   PORTD4
 
+// Added support for the Tiny84
+#elif defined (__AVR_ATtiny84__) || defined (__AVR_ATtiny84A__)
+
+#define LN_RX_PORT  PINA
+#define LN_RX_DDR   DDRA
+#define LN_RX_BIT   PINA7
+
 #else
 
 #define LN_RX_PORT  PINB
