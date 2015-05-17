@@ -21,10 +21,10 @@ void setup() {
 	Serial.println("LocoNet Fast Clock Demo");
 
 	// Initialize the LocoNet interface
-	LocoNet.init();
+	LocoNet.init(4);
 
 	// Initialize the Fast Clock
-	FastClock.init(0, 0, 1);
+	FastClock.init(0, 1, 1);
 
 	// Poll the Current Time from the Command Station
 	FastClock.poll();
@@ -44,11 +44,11 @@ void loop() {
 }
 
 void notifyFastClock( uint8_t Rate, uint8_t Day, uint8_t Hour, uint8_t Minute, uint8_t Sync ) {
-	Serial.print("Rate: "); Serial.print(Rate);
-	Serial.print(" Day: "); Serial.print(Day);
-	Serial.print(" Hour: "); Serial.print(Hour);
-	Serial.print(" Min: "); Serial.print(Minute);
-	Serial.print(" Sunc: "); Serial.println(Sync);
+	Serial.print("Rate: "); Serial.print(Rate, DEC);
+	Serial.print(" Day: "); Serial.print(Day, DEC);
+	Serial.print(" Hour: "); Serial.print(Hour, DEC);
+	Serial.print(" Min: "); Serial.print(Minute, DEC);
+	Serial.print(" Sync: "); Serial.println(Sync, DEC);
 }
 
 void notifyFastClockFracMins( uint16_t FracMins ) {
