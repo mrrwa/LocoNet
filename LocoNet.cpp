@@ -63,12 +63,16 @@
  * 
  *****************************************************************************/
 
+// Uncomment to enable SV Processing Debug Print statements
+//#define DEBUG_SV
+
 #include "LocoNet.h"
 #include "ln_sw_uart.h"
 #include "ln_config.h"
 #include "utils.h"
 
 #include <avr/eeprom.h>
+#include <avr/wdt.h>
 
 const char * LoconetStatusStrings[] = {
 	"CD Backoff",
@@ -1075,6 +1079,12 @@ uint8_t LocoNetSystemVariableClass::isSVStorageValid(uint16_t Offset)
 
 bool LocoNetSystemVariableClass::CheckAddressRange(uint16_t startAddress, uint8_t Count)
 {
+#ifdef DEBUG_SV
+  Serial.print("LNSV-CheckAddressRange: ");
+  Serial.print(startAddress);
+  Serial.print('-');
+  Serial.println(Count);
+#endif    
   while (Count != 0)
   {
     if (!isSVStorageValid(startAddress))
@@ -1123,7 +1133,10 @@ byte abPlain[8];
 SV_STATUS LocoNetSystemVariableClass::processMessage(lnMsg *LnPacket )
 {
  SV_Addr_t unData ;
-  
+    
+#ifdef DEBUG_SV
+  Serial.println("LNSV-processMessage-1");
+#endif  
   if( ( LnPacket->sv.mesg_size != (byte) 0x10 ) ||
       ( LnPacket->sv.command != (byte) OPC_PEER_XFER ) ||
       ( LnPacket->sv.sv_type != (byte) 0x02 ) ||
@@ -1132,21 +1145,35 @@ SV_STATUS LocoNetSystemVariableClass::processMessage(lnMsg *LnPacket )
       ( ( LnPacket->sv.svx2 & (byte) 0xF0 ) != (byte) 0x10 ) )
     return SV_OK ;
  
+#ifdef DEBUG_SV
+  Serial.println("LNSV-processMessage-2");
+#endif
   decodePeerData( &LnPacket->px, unData.abPlain ) ;
 
   if ((LnPacket->sv.sv_cmd != SV_DISCOVER) && 
       (LnPacket->sv.sv_cmd != SV_CHANGE_ADDRESS) && 
       (unData.stDecoded.unDestinationId.w != readSVNodeId()))
   {
+#ifdef DEBUG_SV
+    Serial.print("LNSV-processMessage-Wrong-Node: ");
+    Serial.print(unData.stDecoded.unDestinationId.w);
+    Serial.print('-');
+    Serial.println(readSVNodeId());
+#endif
     return SV_OK;
   }
 
+#ifdef DEBUG_SV
+  Serial.print("LNSV-processMessage-Command: ");
+  Serial.println(LnPacket->sv.sv_cmd, HEX);
+#endif
+    
   switch( LnPacket->sv.sv_cmd )
   {
     case SV_WRITE_SINGLE:
         if (!CheckAddressRange(unData.stDecoded.unVendorIdOrSvAddress.w, 1)) return SV_ERROR;
         writeSVStorage(unData.stDecoded.unVendorIdOrSvAddress.w, unData.abPlain[4]);
-        // fall through inteded!
+        // fall through intended!
     case SV_READ_SINGLE:
         if (!CheckAddressRange(unData.stDecoded.unVendorIdOrSvAddress.w, 1)) return SV_ERROR;
         unData.abPlain[4] = readSVStorage(unData.stDecoded.unVendorIdOrSvAddress.w);
@@ -1216,6 +1243,31 @@ SV_STATUS LocoNetSystemVariableClass::processMessage(lnMsg *LnPacket )
         LocoNet.sendLongAck(43); // not yet implemented
         return SV_ERROR;
   }
+    
+  encodePeerData( &LnPacket->px, unData.abPlain ); // recycling the received packet
+    
+#ifdef DEBUG_SV
+  Serial.print("LNSV-processMessage Send Response: ");
+#endif
+
+  LnPacket->sv.sv_cmd |= 0x40;    // flag the message as reply
+    
+  LN_STATUS lnStatus = LocoNet.send(LnPacket, LN_BACKOFF_INITIAL);
+	
+#ifdef DEBUG_SV
+  Serial.println(lnStatus);   // send successful reply
+#endif
+    
+  if (LnPacket->sv.sv_cmd == (SV_RECONFIGURE | 0x40))
+  {
+    wdt_enable(WDTO_15MS);  // prepare for reset
+    while (1) {}            // stop and wait for watchdog to knock us out
+  }
+   
+#ifdef DEBUG_SV
+  Serial.println("LNSV-processMessage-4");
+#endif
+
   return SV_OK;
 }
 

@@ -351,33 +351,6 @@ class LocoNetSystemVariableClass
     uint8_t DeferredProcessingRequired ;
     uint8_t DeferredSrcAddr ;
     
-	/** Read a value from the given EEPROM offset.
-	 *
-	 * There are two special values for the Offset parameter:
-	 *	SV_ADDR_EEPROM_SIZE - Return the size of the EEPROM
-	 *  SV_ADDR_SW_VERSION - Return the value of swVersion
-	 *  3 and on - Return the byte stored in the EEPROM at location (Offset - 2)
-	 *
-	 * Parameters:
-	 *		Offset: The offset into the EEPROM. Despite the value being passed as 2 Bytes, only the lower byte is respected.
-	 *
-	 * Returns:
-	 *		A Byte containing the EEPROM size, the software version or contents of the EEPROM.
-	 *
-	 */
-    uint8_t readSVStorage(uint16_t Offset );
-	
-	/** Write the given value to the given Offset in EEPROM.
-	 *
-	 * TODO: Writes to Offset 0 and 1 will cause data corruption.
-	 *
-	 * Fires notifySVChanged(Offset), if the value actually chaned.
-	 *
-	 * Returns:
-	 *		A Byte containing the new EEPROM value (even if unchanged).
-	 */
-    uint8_t writeSVStorage(uint16_t Offset, uint8_t Value);
-	
 	/** Checks whether the given Offset is a valid value.
 	 *
 	 * Returns:
@@ -436,6 +409,33 @@ class LocoNetSystemVariableClass
 	 */
 	SV_STATUS processMessage(lnMsg *LnPacket );
 	
+    /** Read a value from the given EEPROM offset.
+     *
+     * There are two special values for the Offset parameter:
+     *	SV_ADDR_EEPROM_SIZE - Return the size of the EEPROM
+     *  SV_ADDR_SW_VERSION - Return the value of swVersion
+     *  3 and on - Return the byte stored in the EEPROM at location (Offset - 2)
+     *
+     * Parameters:
+     *		Offset: The offset into the EEPROM. Despite the value being passed as 2 Bytes, only the lower byte is respected.
+     *
+     * Returns:
+     *		A Byte containing the EEPROM size, the software version or contents of the EEPROM.
+     *
+     */
+    uint8_t readSVStorage(uint16_t Offset );
+    
+    /** Write the given value to the given Offset in EEPROM.
+     *
+     * TODO: Writes to Offset 0 and 1 will cause data corruption.
+     *
+     * Fires notifySVChanged(Offset), if the value actually chaned.
+     *
+     * Returns:
+     *		A Byte containing the new EEPROM value (even if unchanged).
+     */
+    uint8_t writeSVStorage(uint16_t Offset, uint8_t Value);
+    
 	/**
 	 * Attempts to send a reply to an SV programming message.
 	 * This method will repeatedly try to send the message, until it succeeds.
