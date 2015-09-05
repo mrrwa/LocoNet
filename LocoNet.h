@@ -344,12 +344,13 @@ typedef enum
 class LocoNetSystemVariableClass
 {
   private:
-	uint16_t 	vendorId ;
+	uint8_t 	mfgId ;
+	uint8_t 	devId ;
 	uint16_t 	deviceId ;
-    uint8_t     swVersion ;
+  uint8_t   swVersion ;
     
-    uint8_t DeferredProcessingRequired ;
-    uint8_t DeferredSrcAddr ;
+  uint8_t DeferredProcessingRequired ;
+  uint8_t DeferredSrcAddr ;
     
 	/** Checks whether the given Offset is a valid value.
 	 *
@@ -385,7 +386,7 @@ class LocoNetSystemVariableClass
     bool CheckAddressRange(uint16_t startAddress, uint8_t Count);
 
   public:
-	void init(uint16_t newVendorId, uint16_t newDeviceId, uint8_t newSwVersion);
+	void init(uint8_t newMfgId, uint8_t newDevId, uint16_t newDeviceId, uint8_t newSwVersion);
 	
 	/**
 	 * Check whether a message is an SV programming message. If so, the message
