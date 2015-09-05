@@ -346,7 +346,7 @@ class LocoNetSystemVariableClass
   private:
 	uint8_t 	mfgId ;
 	uint8_t 	devId ;
-	uint16_t 	deviceId ;
+	uint16_t 	productId ;
   uint8_t   swVersion ;
     
   uint8_t DeferredProcessingRequired ;
@@ -386,7 +386,7 @@ class LocoNetSystemVariableClass
     bool CheckAddressRange(uint16_t startAddress, uint8_t Count);
 
   public:
-	void init(uint8_t newMfgId, uint8_t newDevId, uint16_t newDeviceId, uint8_t newSwVersion);
+	void init(uint8_t newMfgId, uint8_t newDevId, uint16_t newProductId, uint8_t newSwVersion);
 	
 	/**
 	 * Check whether a message is an SV programming message. If so, the message

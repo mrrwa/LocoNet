@@ -1023,14 +1023,14 @@ void LocoNetFastClockClass::process66msActions(void)
   }
 }
 
-void LocoNetSystemVariableClass::init(uint8_t newMfgId, uint8_t newDevId, uint16_t newDeviceId, uint8_t newSwVersion)
+void LocoNetSystemVariableClass::init(uint8_t newMfgId, uint8_t newDevId, uint16_t newProductId, uint8_t newSwVersion)
 {
   DeferredProcessingRequired = 0;
   DeferredSrcAddr = 0;
     
   mfgId = newMfgId ;
   devId = newDevId ;
-	deviceId = newDeviceId ;
+	productId = newProductId ;
   swVersion = newSwVersion ;
 }
 
@@ -1133,7 +1133,7 @@ struct
 {
   U16_t unDestinationId;
   U16_t unMfgIdDevIdOrSvAddress;
-  U16_t unDeviceId;
+  U16_t unproductId;
   U16_t unSerialNumber;
 }    stDecoded;
 byte abPlain[8];
@@ -1196,9 +1196,9 @@ SV_STATUS LocoNetSystemVariableClass::processMessage(lnMsg *LnPacket )
 
     case SV_WRITE_QUAD:
         if (!CheckAddressRange(unData.stDecoded.unMfgIdDevIdOrSvAddress.w, 4)) return SV_ERROR;
-        writeSVStorage(unData.stDecoded.unMfgIdDevIdOrSvAddress.w+0,  unData.abPlain[4]);
-        writeSVStorage(unData.stDecoded.unMfgIdDevIdOrSvAddress.w+1,  unData.abPlain[5]);
-        writeSVStorage(unData.stDecoded.unMfgIdDevIdOrSvAddress.w+2,  unData.abPlain[6]);
+        writeSVStorage(unData.stDecoded.unMfgIdDevIdOrSvAddress.w+0, unData.abPlain[4]);
+        writeSVStorage(unData.stDecoded.unMfgIdDevIdOrSvAddress.w+1, unData.abPlain[5]);
+        writeSVStorage(unData.stDecoded.unMfgIdDevIdOrSvAddress.w+2, unData.abPlain[6]);
         writeSVStorage(unData.stDecoded.unMfgIdDevIdOrSvAddress.w+3, unData.abPlain[7]);
         // fall through intended!
     case SV_READ_QUAD:
@@ -1219,7 +1219,7 @@ SV_STATUS LocoNetSystemVariableClass::processMessage(lnMsg *LnPacket )
         unData.stDecoded.unDestinationId.w            = readSVNodeId();
         unData.stDecoded.unMfgIdDevIdOrSvAddress.b.hi = devId;
         unData.stDecoded.unMfgIdDevIdOrSvAddress.b.lo = mfgId ;
-        unData.stDecoded.unDeviceId.w                 = deviceId;
+        unData.stDecoded.unproductId.w                = productId;
         unData.stDecoded.unSerialNumber.b.lo          = readSVStorage(SV_ADDR_SERIAL_NUMBER_L);
         unData.stDecoded.unSerialNumber.b.hi          = readSVStorage(SV_ADDR_SERIAL_NUMBER_H);
         break;
@@ -1227,7 +1227,7 @@ SV_STATUS LocoNetSystemVariableClass::processMessage(lnMsg *LnPacket )
     case SV_CHANGE_ADDRESS:
         if((mfgId != unData.stDecoded.unMfgIdDevIdOrSvAddress.b.lo) || (devId != unData.stDecoded.unMfgIdDevIdOrSvAddress.b.hi))
           return SV_OK; // not addressed
-        if(deviceId != unData.stDecoded.unDeviceId.w)
+        if(productId != unData.stDecoded.unproductId.w)
           return SV_OK; // not addressed
         if(readSVStorage(SV_ADDR_SERIAL_NUMBER_L) != unData.stDecoded.unSerialNumber.b.lo)
           return SV_OK; // not addressed
@@ -1287,7 +1287,7 @@ SV_STATUS LocoNetSystemVariableClass::doDeferredProcessing( void )
     unData.stDecoded.unDestinationId.w            = readSVNodeId();
     unData.stDecoded.unMfgIdDevIdOrSvAddress.b.lo = mfgId;
     unData.stDecoded.unMfgIdDevIdOrSvAddress.b.hi = devId;
-    unData.stDecoded.unDeviceId.w                 = deviceId;
+    unData.stDecoded.unproductId.w                = productId;
     unData.stDecoded.unSerialNumber.b.lo          = readSVStorage(SV_ADDR_SERIAL_NUMBER_L);
     unData.stDecoded.unSerialNumber.b.hi          = readSVStorage(SV_ADDR_SERIAL_NUMBER_H);
     
