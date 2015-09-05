@@ -139,10 +139,10 @@ lnMsg *recvLnMsg( LnBuf *Buffer )
         // the buffer to make room for the data at the end of the buffer
         if( lastWriteIndex < Buffer->ReadIndex )
         {
-          memcpy( Buffer->Buf + tempSize, Buffer->Buf, lastWriteIndex ) ;
+          memmove( Buffer->Buf + tempSize, Buffer->Buf, lastWriteIndex ) ;
 
           // Now move the data at the end of the buffer to the beginning
-          memcpy( Buffer->Buf, Buffer->Buf + Buffer->ReadPacketIndex, tempSize ) ;
+          memmove( Buffer->Buf, Buffer->Buf + Buffer->ReadPacketIndex, tempSize ) ;
         }
         else
         {
@@ -150,7 +150,7 @@ lnMsg *recvLnMsg( LnBuf *Buffer )
           tempSize = lastWriteIndex - Buffer->ReadPacketIndex;
 
           // Now move the data at the end of the buffer to the beginning
-          memcpy( Buffer->Buf, Buffer->Buf + Buffer->ReadPacketIndex, tempSize ) ;
+          memmove( Buffer->Buf, Buffer->Buf + Buffer->ReadPacketIndex, tempSize ) ;
         }
 
         // Now fix up the ReadIndexes

@@ -9,6 +9,7 @@ elapsedMillis  rxElapsedMillis;
 #define TX_LED 13
 #define RX_LED  9
 
+// Rx Pin on the LeoStick is D4
 #define  TX_PIN 5
 
 static   LnBuf        LnTxBuffer ;
