@@ -132,10 +132,44 @@ lnMsg* LocoNetClass::receive()
   return recvLnMsg(&LnBuffer);
 }
 
+/*
+  Send a LocoNet message, using the default priority delay.
+
+  When an attempt to send fails, this method will continue to try to re-send
+  the message until it is successfully sent or until the maximum retry
+  limit is reached.
+
+  Return value is one of:
+    LN_DONE -         Indicates successful send of the message
+    LN_RETRY_ERROR -  Could not successfully send the message within 
+                        LN_TX_RETRIES_MAX attempts
+    LN_UNKNOWN -      Indicates an abnormal exit condition for the send attempt.
+                        In this case, it is recommended to make another send 
+                        attempt.
+*/
 LN_STATUS LocoNetClass::send(lnMsg *pPacket)
 {
+  return send(pPacket, LN_BACKOFF_INITIAL);
+}
+
+/*
+  Send a LocoNet message, using an argument for the priority delay.
+
+  When an attempt to send fails, this method will continue to try to re-send
+  the message until it is successfully sent or until the maximum retry
+  limit is reached.
+
+  Return value is one of:
+    LN_DONE -         Indicates successful send of the message
+    LN_RETRY_ERROR -  Could not successfully send the message within 
+                        LN_TX_RETRIES_MAX attempts
+    LN_UNKNOWN -      Indicates an abnormal exit condition for the send attempt.
+                        In this case, it is recommended to make another send 
+                        attempt.
+*/
+LN_STATUS LocoNetClass::send(lnMsg *pPacket, uint8_t ucPrioDelay)
+{
   unsigned char ucTry;
-  unsigned char ucPrioDelay = LN_BACKOFF_INITIAL;
   LN_STATUS enReturn;
   unsigned char ucWaitForEnterBackoff;
 
@@ -165,11 +199,23 @@ LN_STATUS LocoNetClass::send(lnMsg *pPacket)
   return LN_RETRY_ERROR;
 }
 
-LN_STATUS LocoNetClass::send(lnMsg *pPacket, uint8_t ucPrioDelay)
-{
-  return sendLocoNetPacketTry(pPacket, ucPrioDelay);
-}
+/*
+  Create a four-byte LocoNet message from the three method parameters plus a 
+  computed checksum, and send that message to LocoNet using a default priority 
+  delay.
 
+  When an attempt to send fails, this method will continue to try to re-send
+  the message until it is successfully sent or until the maximum retry
+  limit is reached.
+
+  Return value is one of:
+    LN_DONE -         Indicates successful send of the message
+    LN_RETRY_ERROR -  Could not successfully send the message within 
+                        LN_TX_RETRIES_MAX attempts
+    LN_UNKNOWN -      Indicates an abnormal exit condition for the send attempt.
+                        In this case, it is recommended to make another send 
+                        attempt.
+*/
 LN_STATUS LocoNetClass::send( uint8_t OpCode, uint8_t Data1, uint8_t Data2 )
 {
   lnMsg SendPacket ;
@@ -181,6 +227,40 @@ LN_STATUS LocoNetClass::send( uint8_t OpCode, uint8_t Data1, uint8_t Data2 )
   return send( &SendPacket ) ;
 }
 
+/*
+  Create a four-byte LocoNet message from the three method parameters plus a 
+  computed checksum, and send that message to LocoNet using a parameter for the
+  priority delay.
+
+  This method will make exactly one attempt to send the LocoNet message which
+  may or may not succeed.  Code which uses this method must check the return
+  status value to determine if the send should be re-tried.  Such code must also
+  implement a retry limit counter.
+
+  Return value is one of:
+    LN_DONE -         Indicates successful send of the message.
+    LN_CD_BACKOFF -   Indicates that the message cannot be sent at this time
+                        because the LocoNet state machine is in the "Carrier Detect
+                        Backoff" phase.  This should not count against the "retry"
+                        count.
+    LN_PRIO_BACKOFF - Indicates that the message cannot be sent at this time
+                        because the LocoNet state machine is in the "Priority 
+                        Backoff" phase.  This should not count against the "retry" 
+                        count.
+    LN_NETWORK_BUSY - Indicates that the message cannot be sent at this time
+                        because some other LocoNet agent is currently sending
+                        a message.  This should not count against the "retry"
+                        count.
+    LN_COLLISSION -   Indicates that an attempt was made to send the message 
+                        but that the message was corrupted by some other LocoNet
+                        agent's LocoNe traffic.  The retry counter should be 
+                        decremented and another send should be attempted if the 
+                        retry limit has not been reached.
+    LN_UNKNOWN -      Indicates an abnormal exit condition for the send attempt.
+                        In this case, it is recommended to decrement the retry 
+                        counter and make another send attempt if the retry limit
+                        has not been reached.
+*/
 LN_STATUS LocoNetClass::send( uint8_t OpCode, uint8_t Data1, uint8_t Data2, uint8_t PrioDelay )
 {
   lnMsg SendPacket ;
@@ -192,6 +272,21 @@ LN_STATUS LocoNetClass::send( uint8_t OpCode, uint8_t Data1, uint8_t Data2, uint
   return sendLocoNetPacketTry( &SendPacket, PrioDelay ) ;
 }
 
+/* send a LONG_ACK (LACK) message to Loconet as a response to an OPC_PEER_XFER 
+   message, using the method parameter as the error code in the LONG_ACK message.
+
+  When an attempt to send fails, this method will continue to try to re-send
+  the message until it is successfully sent or until the maximum retry
+  limit is reached.
+
+  Return value is one of:
+    LN_DONE -         Indicates successful send of the message.
+    LN_RETRY_ERROR -  Indicates that the method could not successfully send the
+                        message within LN_TX_RETRIES_MAX attempts.
+    LN_UNKNOWN -      Indicates an abnormal exit condition for the send attempt.
+                        In this case, it is recommended to make another send 
+                        attempt.
+*/
 LN_STATUS LocoNetClass::sendLongAck(uint8_t ucCode)
 {
   lnMsg SendPacket ;
@@ -1234,9 +1329,9 @@ SV_STATUS LocoNetSystemVariableClass::processMessage(lnMsg *LnPacket )
         if(readSVStorage(SV_ADDR_SERIAL_NUMBER_H) != unData.stDecoded.unSerialNumber.b.hi)
           return SV_OK; // not addressed
           
-        if (writeSVNodeId(unData.stDecoded.unDestinationId.w) != 0)
+        if (writeSVNodeId(unData.stDecoded.unDestinationId.w) != unData.stDecoded.unDestinationId.w)
         {
-          LocoNet.sendLongAck(44);  // failed to change address (not implemented or failed to write)
+          LocoNet.sendLongAck(44);  // failed to change address in non-volatile memory (not implemented or failed to write)
           return SV_OK ; // the LN reception was ok, we processed the message
         }
         break;
@@ -1252,13 +1347,18 @@ SV_STATUS LocoNetSystemVariableClass::processMessage(lnMsg *LnPacket )
   encodePeerData( &LnPacket->px, unData.abPlain ); // recycling the received packet
     
   LnPacket->sv.sv_cmd |= 0x40;    // flag the message as reply
-    
+  
   LN_STATUS lnStatus = LocoNet.send(LnPacket, LN_BACKOFF_INITIAL);
 	
 #ifdef DEBUG_SV
   Serial.print("LNSV Send Response - Status: ");
-  Serial.println(lnStatus);   // send successful reply
+  Serial.println(lnStatus);   // report status value from send attempt
 #endif
+
+  if (lnStatus != LN_DONE) {
+    // failed to send the SV reply message.  Send will NOT be re-tried.
+    LocoNet.sendLongAck(44);  // indicate failure to send the reply
+  }
     
   if (LnPacket->sv.sv_cmd == (SV_RECONFIGURE | 0x40))
   {
@@ -1292,7 +1392,9 @@ SV_STATUS LocoNetSystemVariableClass::doDeferredProcessing( void )
     unData.stDecoded.unSerialNumber.b.hi          = readSVStorage(SV_ADDR_SERIAL_NUMBER_H);
     
     encodePeerData( &msg.px, unData.abPlain );
-    
+
+    /* Note that this operation intentionally uses a "make one attempt to
+       send to LocoNet" method here */
     if( sendLocoNetPacketTry( &msg, LN_BACKOFF_INITIAL + ( unData.stDecoded.unSerialNumber.b.lo % (byte) 10 ) ) != LN_DONE )
       return SV_DEFERRED_PROCESSING_NEEDED ;
 
