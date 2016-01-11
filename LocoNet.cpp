@@ -366,6 +366,13 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
 
   case OPC_SW_ACK:
     break ;
+    
+  case OPC_MULTI_SENSE:
+  	Address = (LnPacket->multi.adr1 * 256) + (LnPacket->multi.adr2) ;
+  	
+  	if(notifyMultiSense)
+  	   notifyMultiSense( Address, LnPacket->multi.type, LnPacket->multi.zone + 1 ) ;
+  	break ;
 
   case OPC_LONG_ACK:
     if( LnPacket->lack.opcode == (OPC_SW_STATE & 0x7F ) )
