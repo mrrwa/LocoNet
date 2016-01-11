@@ -406,6 +406,16 @@ typedef struct swreq_t {
     uint8_t chksum;        /* exclusive-or checksum for the message                */
 } swReqMsg;
 
+/* Power management and transponding */
+typedef struct multisense_t {
+    uint8_t command;
+    uint8_t type;          /* multi sense type                                     */
+    uint8_t zone;          /* zone and section                                     */
+    uint8_t adr1;         /* ls of address                                         */
+	uint8_t adr2;         /* ms of address                                         */
+    uint8_t chksum;        /* exclusive-or checksum for the message                */
+} multiSenseRepMsg;
+
 /* Set slot sound functions */
 typedef struct locodata_t {
     uint8_t command;
@@ -611,6 +621,7 @@ typedef union {
 		inputRepMsg		ir ;
 		swRepMsg		srp ;
 		swReqMsg		srq ;
+		multiSenseRepMsg	multi;
 		locoDataMsg		ld ;
 		locoSndMsg		ls ;
 		locoDirfMsg		ldf ;
@@ -654,6 +665,7 @@ typedef union {
 #define OPC_SW_STATE      0xbc
 #define OPC_SW_ACK        0xbd
 #define OPC_LOCO_ADR      0xbf
+#define OPC_MULTI_SENSE   0xd0
 #define OPC_PEER_XFER     0xe5
 #define OPC_SL_RD_DATA    0xe7
 #define OPC_IMM_PACKET    0xed
