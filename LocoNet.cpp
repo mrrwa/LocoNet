@@ -368,7 +368,6 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
     break ;
     
   case OPC_MULTI_SENSE:
-  
     uint16_t Locoaddr ;
     char     Zone ;
   
