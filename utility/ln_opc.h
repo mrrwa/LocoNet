@@ -416,7 +416,7 @@ typedef struct multisense_transponder_t {
     uint8_t type;          /* multi sense type                                     */
     uint8_t zone;          /* zone and section                                     */
     uint8_t adr1;          /* ls of address                                        */
-	uint8_t adr2;          /* ms of address                                        */
+    uint8_t adr2;          /* ms of address                                        */
     uint8_t chksum;        /* exclusive-or checksum for the message                */
 } multiSenseTranspMsg;
 
@@ -426,7 +426,7 @@ typedef struct multisense_power_t {
     uint8_t arg1;          /* first byte                                           */
     uint8_t arg2;          /* second byte                                          */
     uint8_t arg3;          /* third byte                                           */
-	uint8_t arg4;          /* fourth byte                                          */
+    uint8_t arg4;          /* fourth byte                                          */
     uint8_t chksum;        /* exclusive-or checksum for the message                */
 } multiSensePowerMsg;
 
