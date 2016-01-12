@@ -368,13 +368,27 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
     break ;
     
   case OPC_MULTI_SENSE:
-    uint16_t Locoaddr ;
-    char     Zone ;
   
-    switch( LnPacket->data[1] & 0xE0 )
+    switch( LnPacket->data[1] & OPC_MULTI_SENSE_MSG )
     {
+      case OPC_MULTI_SENSE_POWER:
+        // This is a PM42 power event.
+        uint8_t pCMD;
+        pCMD = (LnPacket->mspw.arg3 & 0xF0) ;
+
+        if ((pCMD == 0x30) || (pCMD == 0x10)) {
+          // autoreverse
+          uint8_t cm1 = LnPacket->mspw.arg3;
+          uint8_t cm2 = LnPacket->mspw.arg4;
+        }
+        break ;
+
       case OPC_MULTI_SENSE_ABSENT:
       case OPC_MULTI_SENSE_PRESENT:
+        // Transponding Event
+        uint16_t Locoaddr ;
+        char     Zone ;
+
         Address = LnPacket->data[2] + ((LnPacket->data[1] & 0x1F) << 7) ;
         Direction = (LnPacket->data[1] & 0x20) != 0 ? true : false ;
         
@@ -397,8 +411,6 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
       	  
       	if(notifyMultiSenseTransponder)
           notifyMultiSenseTransponder( Address, Zone, Locoaddr, Direction ) ;
-        break ;
-      case OPC_MULTI_SENSE_POWER:
         break ;
     }
     break ;
