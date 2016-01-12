@@ -41,13 +41,16 @@ void loop() {
   }
 }
 
+
   // This call-back function is called from LocoNet.processSwitchSensorMessage
   // for OPC_MULTI_SENSE 0xD0
-void notifyMultiSense( uint16_t Address, uint8_t Type, uint8_t Zone ) {
-  Serial.print("Railcom Address: ");
-  Serial.print(Address, DEC);
-  Serial.print(':');
-  Serial.print(Type ? "present" : "absent");
+void notifyMultiSenseTransponder( uint16_t Address, uint8_t Zone, uint16_t LocoAddress, uint8_t Enter ) {
+  Serial.print("Railcom Sensor ");
+  Serial.print(Address);
+  Serial.print(" reports ");
+  Serial.print(Enter? "present" : "absent");
+  Serial.print(" of decoder address ");
+  Serial.print(LocoAddress, DEC);
   Serial.print(" in zone ");
-  Serial.println(Zone);
+  Serial.println(Zone, HEX);
 }
