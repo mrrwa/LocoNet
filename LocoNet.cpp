@@ -321,13 +321,6 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
   uint8_t  Direction ;
   uint8_t  Output ;
   uint8_t  ConsumedFlag = 1 ;
-  
-  uint16_t Locoaddr ;
-  uint8_t  AddrL ;
-  uint8_t  AddrH ;
-  uint16_t Addr ;
-  uint8_t  Enter ;
-  char     Zone ;
 
   Address = (LnPacket->srq.sw1 | ( ( LnPacket->srq.sw2 & 0x0F ) << 7 )) ;
   if( LnPacket->sr.command != OPC_INPUT_REP )
@@ -375,16 +368,18 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
     break ;
     
   case OPC_MULTI_SENSE:
+  
+    uint16_t Locoaddr ;
+    char     Zone ;
+  
     switch( LnPacket->data[1] & 0xE0 )
     {
       case OPC_MULTI_SENSE_ABSENT:
       case OPC_MULTI_SENSE_PRESENT:
-        AddrL = LnPacket->data[2] ;
-        AddrH = LnPacket->data[1] & 0x1F ;
-        Addr = AddrL + (AddrH << 7) ;
-        Enter = (LnPacket->data[1] & 0x20) != 0 ? true : false ;
+        Address = LnPacket->data[2] + ((LnPacket->data[1] & 0x1F) << 7) ;
+        Direction = (LnPacket->data[1] & 0x20) != 0 ? true : false ;
         
-        Addr++ ;
+        Address++ ;
         
       	if( LnPacket->mstr.adr1 == 0x7D)
       	  Locoaddr = LnPacket->mstr.adr2 ;
@@ -402,7 +397,7 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
         else Zone = LnPacket->data[2]&0x0F ;
       	  
       	if(notifyMultiSenseTransponder)
-          notifyMultiSenseTransponder( Addr, Zone, Locoaddr, Enter ) ;
+          notifyMultiSenseTransponder( Address, Zone, Locoaddr, Direction ) ;
         break ;
       case OPC_MULTI_SENSE_POWER:
         break ;
