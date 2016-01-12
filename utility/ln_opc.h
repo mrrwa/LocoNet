@@ -160,9 +160,9 @@
 #define OPC_SE             0xE4 /* Opcode Security Element              */
 #define OPC_ANALOGIO       0xE5 /* Analog IO                            */
 
-#define OPC_MULTI_SENSE_ABSENT  0x00 // MSG field: transponder lost
-#define OPC_MULTI_SENSE_PRESENT 0x20 // MSG field: transponder seen
-#define OPC_MULTI_SENSE_POWER   0x60 // MSG field: Power message
+#define OPC_MULTI_SENSE_ABSENT  0x00 /* MSG field: transponder lost     */
+#define OPC_MULTI_SENSE_PRESENT 0x20 /* MSG field: transponder seen     */
+#define OPC_MULTI_SENSE_POWER   0x60 /* MSG field: Power message        */
 
 
 /* Slot Status byte definitions and macros */
