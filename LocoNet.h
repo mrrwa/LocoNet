@@ -137,6 +137,7 @@ class LocoNetClass
 	const char*	getStatusStr(LN_STATUS Status);
     
     uint8_t processSwitchSensorMessage( lnMsg *LnPacket ) ;
+    uint8_t processPowerTransponderMessage( lnMsg *LnPacket ) ;
 	
     LN_STATUS requestSwitch( uint16_t Address, uint8_t Output, uint8_t Direction ) ;
     LN_STATUS reportSwitch( uint16_t Address ) ;
@@ -483,8 +484,10 @@ extern void notifySensor( uint16_t Address, uint8_t State ) __attribute__ ((weak
 extern void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) __attribute__ ((weak));
 extern void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction ) __attribute__ ((weak));
 extern void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction ) __attribute__ ((weak));
-extern void notifyMultiSense( uint16_t Address, uint8_t Type, uint8_t Zone ) __attribute__ ((weak));
 extern void notifyPower( uint8_t State ) __attribute__ ((weak));
+
+// Power management and Transponding Call-back functions
+extern void notifyMultiSenseTransponder( uint16_t Address, uint8_t Zone, uint16_t LocoAddress, uint8_t Enter ) __attribute__ ((weak));
 
 // Throttle notify Call-back functions
 extern void notifyThrottleAddress( uint8_t UserData, TH_STATE State, uint16_t Address, uint8_t Slot ) __attribute__ ((weak));

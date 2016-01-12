@@ -160,6 +160,10 @@
 #define OPC_SE             0xE4 /* Opcode Security Element              */
 #define OPC_ANALOGIO       0xE5 /* Analog IO                            */
 
+#define OPC_MULTI_SENSE_ABSENT  0x00 // MSG field: transponder lost
+#define OPC_MULTI_SENSE_PRESENT 0x20 // MSG field: transponder seen
+#define OPC_MULTI_SENSE_POWER   0x60 // MSG field: Power message
+
 
 /* Slot Status byte definitions and macros */
 /***********************************************************************************
@@ -406,15 +410,25 @@ typedef struct swreq_t {
     uint8_t chksum;        /* exclusive-or checksum for the message                */
 } swReqMsg;
 
-/* Power management and transponding */
-typedef struct multisense_t {
+/* multi sense transponding */
+typedef struct multisense_transponder_t {
     uint8_t command;
     uint8_t type;          /* multi sense type                                     */
     uint8_t zone;          /* zone and section                                     */
-    uint8_t adr1;         /* ls of address                                         */
-	uint8_t adr2;         /* ms of address                                         */
+    uint8_t adr1;          /* ls of address                                        */
+	uint8_t adr2;          /* ms of address                                        */
     uint8_t chksum;        /* exclusive-or checksum for the message                */
-} multiSenseRepMsg;
+} multiSenseTranspMsg;
+
+/* muli sense Power management */
+typedef struct multisense_power_t {
+    uint8_t command;
+    uint8_t arg1;          /* first byte                                           */
+    uint8_t arg2;          /* second byte                                          */
+    uint8_t arg3;          /* third byte                                           */
+	uint8_t arg4;          /* fourth byte                                          */
+    uint8_t chksum;        /* exclusive-or checksum for the message                */
+} multiSensePowerMsg;
 
 /* Set slot sound functions */
 typedef struct locodata_t {
@@ -621,7 +635,6 @@ typedef union {
 		inputRepMsg		ir ;
 		swRepMsg		srp ;
 		swReqMsg		srq ;
-		multiSenseRepMsg	multi;
 		locoDataMsg		ld ;
 		locoSndMsg		ls ;
 		locoDirfMsg		ldf ;
@@ -636,6 +649,8 @@ typedef union {
 		seMsg			se ;
 		UhlenbrockMsg           ub;
 		AnalogIoMsg             anio;
+		multiSenseTranspMsg	mstr;
+		multiSensePowerMsg	mspw;
 		uint8_t			data[16] ;
 } lnMsg ;
 
