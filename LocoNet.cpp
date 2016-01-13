@@ -394,7 +394,7 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
             uint8_t d = 1 ;
             for ( uint8_t i = 1; i < 5; i++ )
             {
-              if ((cm1 & i) != 0)
+              if ((cm1 & d) != 0)
               {
                 Mode = 0 ;
               } else {
