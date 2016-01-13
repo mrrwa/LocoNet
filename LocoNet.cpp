@@ -377,16 +377,39 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
         /* Working on porting this */
         if(notifyMultiSensePower)
         {
-          uint8_t pCMD;
+          uint8_t pCMD ;
           pCMD = (LnPacket->mspw.arg3 & 0xF0) ;
 
-          if ((pCMD == 0x30) || (pCMD == 0x10)) {
-            // autoreverse
-            uint8_t cm1 = LnPacket->mspw.arg3;
-            uint8_t cm2 = LnPacket->mspw.arg4;
+          if ((pCMD == 0x30) || (pCMD == 0x10))
+          {
+            // Autoreverse & Circuitbreaker
+            uint8_t cm1 = LnPacket->mspw.arg3 ;
+            uint8_t cm2 = LnPacket->mspw.arg4 ;
+
+            uint8_t Mode ; // 0 = AutoReversing 1 = CircuitBreaker
+
+            uint8_t boardID = ((LnPacket->mspw.arg2 + 1) + ((LnPacket->mspw.arg1 & 0x1) == 1) ? 128 : 0) ;
+
+            // Report 4 Sub-Districts for a PM4x
+            uint8_t d = 1 ;
+            for ( uint8_t i = 1; i < 5; i++ )
+            {
+              if ((cm1 & i) != 0)
+              {
+                Mode = 0 ;
+              } else {
+                Mode = 1 ;
+              }
+              Direction = cm2 & d ;
+              d = d * 2 ;
+              notifyMultiSensePower( boardID, i, Mode, Direction ) ; // BoardID, Subdistrict, Mode, Direction
+            }
+          } else if (pCMD == 0x70) {
+              // Programming
+          } else if (pCMD == 0x00) {
+              // Device type report
           }
         }
-        notifyMultiSensePower() ; // Place Holder for now
         break ;
 
       case OPC_MULTI_SENSE_ABSENT:
@@ -417,7 +440,6 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
           else if ( (LnPacket->mstr.zone&0x0F) == 0x0C ) Zone = 'G' ;
           else if ( (LnPacket->mstr.zone&0x0F) == 0x0E ) Zone = 'H' ;
           else Zone = LnPacket->mstr.zone&0x0F ;
-        	  
         	
             notifyMultiSenseTransponder( Address, Zone, Locoaddr, Present ) ;
           break ;
