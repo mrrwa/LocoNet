@@ -3,7 +3,10 @@
 // LocoNet RailCom Monitor
 // Demonstrates the use of the:
 //
-// OPC_MULTI_SENSE call-back from a Uhlenbrock 68500 MARCo-Empfänger
+// OPC_MULTI_SENSE transponder call-back
+//
+// Tested on a Uhlenbrock 68500 MARCo-Empfänger in Digitrax Mode
+// LNCV 15 == 2 - Send ÜF Digitrax with Locomotive address and Block status (vacant/occupied) 
 
 lnMsg        *LnPacket;
 
@@ -44,11 +47,11 @@ void loop() {
 
   // This call-back function is called from LocoNet.processSwitchSensorMessage
   // for OPC_MULTI_SENSE 0xD0
-void notifyMultiSenseTransponder( uint16_t Address, uint8_t Zone, uint16_t LocoAddress, uint8_t Direction ) {
+void notifyMultiSenseTransponder( uint16_t Address, uint8_t Zone, uint16_t LocoAddress, uint8_t Present ) {
   Serial.print("Railcom Sensor ");
   Serial.print(Address);
   Serial.print(" reports ");
-  Serial.print(Direction? "present" : "absent");
+  Serial.print(Present? "present" : "absent");
   Serial.print(" of decoder address ");
   Serial.print(LocoAddress, DEC);
   Serial.print(" in zone ");

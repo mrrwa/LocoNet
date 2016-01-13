@@ -487,7 +487,8 @@ extern void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Directi
 extern void notifyPower( uint8_t State ) __attribute__ ((weak));
 
 // Power management and Transponding Call-back functions
-extern void notifyMultiSenseTransponder( uint16_t Address, uint8_t Zone, uint16_t LocoAddress, uint8_t Direction ) __attribute__ ((weak));
+extern void notifyMultiSenseTransponder( uint16_t Address, uint8_t Zone, uint16_t LocoAddress, uint8_t Present ) __attribute__ ((weak));
+extern void notifyMultiSensePower() __attribute__ ((weak)); // Place Holder for now
 
 // Throttle notify Call-back functions
 extern void notifyThrottleAddress( uint8_t UserData, TH_STATE State, uint16_t Address, uint8_t Slot ) __attribute__ ((weak));

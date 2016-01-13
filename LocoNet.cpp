@@ -371,47 +371,57 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
   
     switch( LnPacket->data[1] & OPC_MULTI_SENSE_MSG )
     {
-      case OPC_MULTI_SENSE_POWER:
+      case OPC_MULTI_SENSE_DEVICE_INFO:
         // This is a PM42 power event.
-        uint8_t pCMD;
-        pCMD = (LnPacket->mspw.arg3 & 0xF0) ;
 
-        if ((pCMD == 0x30) || (pCMD == 0x10)) {
-          // autoreverse
-          uint8_t cm1 = LnPacket->mspw.arg3;
-          uint8_t cm2 = LnPacket->mspw.arg4;
+        /* Working on porting this */
+        if(notifyMultiSensePower)
+        {
+          uint8_t pCMD;
+          pCMD = (LnPacket->mspw.arg3 & 0xF0) ;
+
+          if ((pCMD == 0x30) || (pCMD == 0x10)) {
+            // autoreverse
+            uint8_t cm1 = LnPacket->mspw.arg3;
+            uint8_t cm2 = LnPacket->mspw.arg4;
+          }
         }
+        notifyMultiSensePower() ; // Place Holder for now
         break ;
 
       case OPC_MULTI_SENSE_ABSENT:
       case OPC_MULTI_SENSE_PRESENT:
         // Transponding Event
-        uint16_t Locoaddr ;
-        char     Zone ;
+        if(notifyMultiSenseTransponder)
+        {
+          uint16_t Locoaddr ;
+          uint8_t  Present ;
+          char     Zone ;
 
-        Address = LnPacket->mstr.zone + ((LnPacket->mstr.type & 0x1F) << 7) ;
-        Direction = (LnPacket->mstr.type & 0x20) != 0 ? true : false ;
-        
-        Address++ ;
-        
-      	if( LnPacket->mstr.adr1 == 0x7D)
-      	  Locoaddr = LnPacket->mstr.adr2 ;
-      	else
-      	  Locoaddr = (LnPacket->mstr.adr1 * 128) + LnPacket->mstr.adr2 ;
-      	  
-      	if ( (LnPacket->mstr.zone&0x0F) == 0x00 ) Zone = 'A' ;
-        else if ( (LnPacket->mstr.zone&0x0F) == 0x02 ) Zone = 'B' ;
-        else if ( (LnPacket->mstr.zone&0x0F) == 0x04 ) Zone = 'C' ;
-        else if ( (LnPacket->mstr.zone&0x0F) == 0x06 ) Zone = 'D' ;
-        else if ( (LnPacket->mstr.zone&0x0F) == 0x08 ) Zone = 'E' ;
-        else if ( (LnPacket->mstr.zone&0x0F) == 0x0A ) Zone = 'F' ;
-        else if ( (LnPacket->mstr.zone&0x0F) == 0x0C ) Zone = 'G' ;
-        else if ( (LnPacket->mstr.zone&0x0F) == 0x0E ) Zone = 'H' ;
-        else Zone = LnPacket->mstr.zone&0x0F ;
-      	  
-      	if(notifyMultiSenseTransponder)
-          notifyMultiSenseTransponder( Address, Zone, Locoaddr, Direction ) ;
-        break ;
+          Address = LnPacket->mstr.zone + ((LnPacket->mstr.type & 0x1F) << 7) ;
+          Present = (LnPacket->mstr.type & 0x20) != 0 ? true : false ;
+          
+          Address++ ;
+          
+        	if( LnPacket->mstr.adr1 == 0x7D)
+        	  Locoaddr = LnPacket->mstr.adr2 ;
+        	else
+        	  Locoaddr = (LnPacket->mstr.adr1 * 128) + LnPacket->mstr.adr2 ;
+        	  
+        	if ( (LnPacket->mstr.zone&0x0F) == 0x00 ) Zone = 'A' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x02 ) Zone = 'B' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x04 ) Zone = 'C' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x06 ) Zone = 'D' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x08 ) Zone = 'E' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x0A ) Zone = 'F' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x0C ) Zone = 'G' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x0E ) Zone = 'H' ;
+          else Zone = LnPacket->mstr.zone&0x0F ;
+        	  
+        	
+            notifyMultiSenseTransponder( Address, Zone, Locoaddr, Present ) ;
+          break ;
+        }
     }
     break ;
 
