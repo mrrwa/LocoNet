@@ -163,7 +163,7 @@
 #define OPC_MULTI_SENSE_MSG           0x60 /* byte 1                          */
 #define OPC_MULTI_SENSE_ABSENT        0x00 /* MSG field: transponder lost     */
 #define OPC_MULTI_SENSE_PRESENT       0x20 /* MSG field: transponder seen     */
-#define OPC_MULTI_SENSE_DEVICE_INFO   0x60 /* MSG field: Power message        */
+#define OPC_MULTI_SENSE_DEVICE_INFO   0x60 /* MSG field: Device Info Message  */
 
 
 /* Slot Status byte definitions and macros */
@@ -421,15 +421,15 @@ typedef struct multisense_transponder_t {
     uint8_t chksum;        /* exclusive-or checksum for the message                */
 } multiSenseTranspMsg;
 
-/* muli sense Power management */
-typedef struct multisense_power_t {
+/* muli sense device info */
+typedef struct multisense_deviceinfo_t {
     uint8_t command;
     uint8_t arg1;          /* first byte                                           */
     uint8_t arg2;          /* second byte                                          */
     uint8_t arg3;          /* third byte                                           */
     uint8_t arg4;          /* fourth byte                                          */
     uint8_t chksum;        /* exclusive-or checksum for the message                */
-} multiSensePowerMsg;
+} multiSenseDeviceInfoMsg;
 
 /* Set slot sound functions */
 typedef struct locodata_t {
@@ -651,7 +651,7 @@ typedef union {
 		UhlenbrockMsg           ub;
 		AnalogIoMsg             anio;
 		multiSenseTranspMsg	mstr;
-		multiSensePowerMsg	mspw;
+		multiSenseDeviceInfoMsg	msdi;
 		uint8_t			data[16] ;
 } lnMsg ;
 

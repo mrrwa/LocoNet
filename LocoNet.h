@@ -486,7 +486,7 @@ extern void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direct
 extern void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction ) __attribute__ ((weak));
 extern void notifyPower( uint8_t State ) __attribute__ ((weak));
 
-// Power management and Transponding Call-back functions
+// Power management, Transponding and Multi-Sense Device info Call-back functions
 extern void notifyMultiSenseTransponder( uint16_t Address, uint8_t Zone, uint16_t LocoAddress, uint8_t Present ) __attribute__ ((weak));
 extern void notifyMultiSensePower( uint8_t BoardID, uint8_t Subdistrict, uint8_t Mode, uint8_t Direction ) __attribute__ ((weak));
 

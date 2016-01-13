@@ -378,17 +378,17 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
         if(notifyMultiSensePower)
         {
           uint8_t pCMD ;
-          pCMD = (LnPacket->mspw.arg3 & 0xF0) ;
+          pCMD = (LnPacket->msdi.arg3 & 0xF0) ;
 
           if ((pCMD == 0x30) || (pCMD == 0x10))
           {
             // Autoreverse & Circuitbreaker
-            uint8_t cm1 = LnPacket->mspw.arg3 ;
-            uint8_t cm2 = LnPacket->mspw.arg4 ;
+            uint8_t cm1 = LnPacket->msdi.arg3 ;
+            uint8_t cm2 = LnPacket->msdi.arg4 ;
 
             uint8_t Mode ; // 0 = AutoReversing 1 = CircuitBreaker
 
-            uint8_t boardID = ((LnPacket->mspw.arg2 + 1) + ((LnPacket->mspw.arg1 & 0x1) == 1) ? 128 : 0) ;
+            uint8_t boardID = ((LnPacket->msdi.arg2 + 1) + ((LnPacket->msdi.arg1 & 0x1) == 1) ? 128 : 0) ;
 
             // Report 4 Sub-Districts for a PM4x
             uint8_t d = 1 ;
