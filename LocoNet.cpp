@@ -352,8 +352,16 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
     break ;
 
   case OPC_SW_REP:
-    if(notifySwitchReport)
-      notifySwitchReport( Address, LnPacket->srp.sn2 & OPC_SW_REP_HI, LnPacket->srp.sn2 & OPC_SW_REP_SW ) ;
+  	if(LnPacket->srp.sn2 & OPC_SW_REP_INPUTS)
+  	{
+    	if(notifySwitchReport)
+      	notifySwitchReport( Address, LnPacket->srp.sn2 & OPC_SW_REP_HI, LnPacket->srp.sn2 & OPC_SW_REP_SW ) ;
+    }
+    else
+    {
+    	if(notifySwitchOutputsReport)
+      	notifySwitchOutputsReport( Address, LnPacket->srp.sn2 & OPC_SW_REP_CLOSED, LnPacket->srp.sn2 & OPC_SW_REP_THROWN ) ;
+    }
     break ;
 
   case OPC_SW_STATE:
@@ -1563,8 +1571,9 @@ uint8_t LocoNetCVClass::processLNCVMessage(lnMsg * LnPacket) {
 								#ifdef DEBUG_OUTPUT
 								printPacket((lnMsg*)&response);
 								#endif
-								LN_STATUS status = LocoNet.send((lnMsg*)&response);	
+								LocoNet.send((lnMsg*)&response);	
 								#ifdef DEBUG_OUTPUT
+								LN_STATUS status = LocoNet.send((lnMsg*)&response);	
 								Serial.print(F("Return Code from Send: "));
 								Serial.print(status, HEX);
 								Serial.print("\n");

@@ -18,6 +18,7 @@ reportSwitch				KEYWORD2
 notifySensor				KEYWORD2
 notifySwitchRequest			KEYWORD2
 notifySwitchReport			KEYWORD2
+notifySwitchOutputsReport	KEYWORD2
 notifySwitchState			KEYWORD2
 
 initLnBuf					KEYWORD2

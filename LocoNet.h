@@ -480,8 +480,11 @@ extern void notifySensor( uint16_t Address, uint8_t State ) __attribute__ ((weak
 // Address: Switch Address.
 // Output: Value 0 for Coil Off, anything else for Coil On
 // Direction: Value 0 for Closed/GREEN, anything else for Thrown/RED
+// state: Value 0 for no input, anything else for activated
+// Sensor: Value 0 for 'Aux'/'thrown' anything else for 'switch'/'closed'
 extern void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) __attribute__ ((weak));
-extern void notifySwitchReport( uint16_t Address, uint8_t Output, uint8_t Direction ) __attribute__ ((weak));
+extern void notifySwitchReport( uint16_t Address, uint8_t State, uint8_t Sensor ) __attribute__ ((weak));
+extern void notifySwitchOutputsReport( uint16_t Address, uint8_t ClosedOutput, uint8_t ThrownOutput ) __attribute__ ((weak));
 extern void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction ) __attribute__ ((weak));
 extern void notifyPower( uint8_t State ) __attribute__ ((weak));
 
