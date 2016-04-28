@@ -1652,7 +1652,7 @@ void LocoNetCVClass::makeLNCVresponse( UhlenbrockMsg & ub, uint8_t originalSourc
 void LocoNetCVClass::computeBytesFromPXCT( UhlenbrockMsg & ub) {
 	uint8_t mask(0x01);
 	// Data has only 7 bytes, so we consider only 7 bits from PXCT1
-	for (int i(0); i < 8; ++i) {
+	for (int i(0); i < 7; ++i) {
 	if ((ub.PXCT1 & mask) != 0x00) {
 		// Bit was set
 		ub.payload.D[i] |= 0x80;
@@ -1666,7 +1666,7 @@ void LocoNetCVClass::computePXCTFromBytes( UhlenbrockMsg & ub ) {
 	uint8_t mask(0x01);
 	ub.PXCT1 = 0x00;
 	// Data has only 7 bytes, so we consider only 7 bits from PXCT1
-	for (int i(0); i < 8; ++i) {
+	for (int i(0); i < 7; ++i) {
 	if ((ub.payload.D[i] & 0x80) != 0x00) {
 		ub.PXCT1 |= mask; // add bit to PXCT1
 		ub.payload.D[i] &= 0x7F;	// remove bit from data byte
