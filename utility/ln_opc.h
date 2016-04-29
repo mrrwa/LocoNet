@@ -160,6 +160,11 @@
 #define OPC_SE             0xE4 /* Opcode Security Element              */
 #define OPC_ANALOGIO       0xE5 /* Analog IO                            */
 
+#define OPC_MULTI_SENSE_MSG           0x60 /* byte 1                          */
+#define OPC_MULTI_SENSE_ABSENT        0x00 /* MSG field: transponder lost     */
+#define OPC_MULTI_SENSE_PRESENT       0x20 /* MSG field: transponder seen     */
+#define OPC_MULTI_SENSE_DEVICE_INFO   0x60 /* MSG field: Device Info Message  */
+
 
 /* Slot Status byte definitions and macros */
 /***********************************************************************************
@@ -406,6 +411,26 @@ typedef struct swreq_t {
     uint8_t chksum;        /* exclusive-or checksum for the message                */
 } swReqMsg;
 
+/* multi sense transponding */
+typedef struct multisense_transponder_t {
+    uint8_t command;
+    uint8_t type;          /* multi sense type                                     */
+    uint8_t zone;          /* zone and section                                     */
+    uint8_t adr1;          /* ls of address                                        */
+    uint8_t adr2;          /* ms of address                                        */
+    uint8_t chksum;        /* exclusive-or checksum for the message                */
+} multiSenseTranspMsg;
+
+/* muli sense device info */
+typedef struct multisense_deviceinfo_t {
+    uint8_t command;
+    uint8_t arg1;          /* first byte                                           */
+    uint8_t arg2;          /* second byte                                          */
+    uint8_t arg3;          /* third byte                                           */
+    uint8_t arg4;          /* fourth byte                                          */
+    uint8_t chksum;        /* exclusive-or checksum for the message                */
+} multiSenseDeviceInfoMsg;
+
 /* Set slot sound functions */
 typedef struct locodata_t {
     uint8_t command;
@@ -625,6 +650,8 @@ typedef union {
 		seMsg			se ;
 		UhlenbrockMsg           ub;
 		AnalogIoMsg             anio;
+		multiSenseTranspMsg	mstr;
+		multiSenseDeviceInfoMsg	msdi;
 		uint8_t			data[16] ;
 } lnMsg ;
 
@@ -654,6 +681,7 @@ typedef union {
 #define OPC_SW_STATE      0xbc
 #define OPC_SW_ACK        0xbd
 #define OPC_LOCO_ADR      0xbf
+#define OPC_MULTI_SENSE   0xd0
 #define OPC_PEER_XFER     0xe5
 #define OPC_SL_RD_DATA    0xe7
 #define OPC_IMM_PACKET    0xed

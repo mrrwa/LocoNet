@@ -374,6 +374,86 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
 
   case OPC_SW_ACK:
     break ;
+    
+  case OPC_MULTI_SENSE:
+  
+    switch( LnPacket->data[1] & OPC_MULTI_SENSE_MSG )
+    {
+      case OPC_MULTI_SENSE_DEVICE_INFO:
+        // This is a PM42 power event.
+
+        /* Working on porting this */
+        if(notifyMultiSensePower)
+        {
+          uint8_t pCMD ;
+          pCMD = (LnPacket->msdi.arg3 & 0xF0) ;
+
+          if ((pCMD == 0x30) || (pCMD == 0x10))
+          {
+            // Autoreverse & Circuitbreaker
+            uint8_t cm1 = LnPacket->msdi.arg3 ;
+            uint8_t cm2 = LnPacket->msdi.arg4 ;
+
+            uint8_t Mode ; // 0 = AutoReversing 1 = CircuitBreaker
+
+            uint8_t boardID = ((LnPacket->msdi.arg2 + 1) + ((LnPacket->msdi.arg1 & 0x1) == 1) ? 128 : 0) ;
+
+            // Report 4 Sub-Districts for a PM4x
+            uint8_t d = 1 ;
+            for ( uint8_t i = 1; i < 5; i++ )
+            {
+              if ((cm1 & d) != 0)
+              {
+                Mode = 0 ;
+              } else {
+                Mode = 1 ;
+              }
+              Direction = cm2 & d ;
+              d = d * 2 ;
+              notifyMultiSensePower( boardID, i, Mode, Direction ) ; // BoardID, Subdistrict, Mode, Direction
+            }
+          } else if (pCMD == 0x70) {
+              // Programming
+          } else if (pCMD == 0x00) {
+              // Device type report
+          }
+        }
+        break ;
+
+      case OPC_MULTI_SENSE_ABSENT:
+      case OPC_MULTI_SENSE_PRESENT:
+        // Transponding Event
+        if(notifyMultiSenseTransponder)
+        {
+          uint16_t Locoaddr ;
+          uint8_t  Present ;
+          char     Zone ;
+
+          Address = LnPacket->mstr.zone + ((LnPacket->mstr.type & 0x1F) << 7) ;
+          Present = (LnPacket->mstr.type & 0x20) != 0 ? true : false ;
+          
+          Address++ ;
+          
+        	if( LnPacket->mstr.adr1 == 0x7D)
+        	  Locoaddr = LnPacket->mstr.adr2 ;
+        	else
+        	  Locoaddr = (LnPacket->mstr.adr1 * 128) + LnPacket->mstr.adr2 ;
+        	  
+        	if ( (LnPacket->mstr.zone&0x0F) == 0x00 ) Zone = 'A' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x02 ) Zone = 'B' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x04 ) Zone = 'C' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x06 ) Zone = 'D' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x08 ) Zone = 'E' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x0A ) Zone = 'F' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x0C ) Zone = 'G' ;
+          else if ( (LnPacket->mstr.zone&0x0F) == 0x0E ) Zone = 'H' ;
+          else Zone = LnPacket->mstr.zone&0x0F ;
+        	
+            notifyMultiSenseTransponder( Address, Zone, Locoaddr, Present ) ;
+          break ;
+        }
+    }
+    break ;
 
   case OPC_LONG_ACK:
     if( LnPacket->lack.opcode == (OPC_SW_STATE & 0x7F ) )
