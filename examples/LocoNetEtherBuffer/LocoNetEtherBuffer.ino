@@ -37,7 +37,9 @@
 * Author:   Jeffrey Marten Gillmor jeffrey.martengillmor@gmail.com
 * Date:     15-Nov-2011
 * Software: AVR-GCC
-* Target:    Arduino
+* Target:   Arduino
+* Review:   Dani Guisado Serra (dguisado@gmail.com) from ClubNCaldes http://www.clubncaldes.com
+* Review Date: 5/7/2016
 * 
 * DESCRIPTION
 * This is an arduino sketch that acts as a buffer between loconet and ethernet.
@@ -68,8 +70,8 @@
 
 /* Modify these variables to match your network */
 byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-byte ip[] = { 192, 168, 11, 177 };
-byte gateway[] = {  192, 168, 11, 254 };
+byte ip[] = { 192, 168, 0, 100 };
+byte gateway[] = {  192, 168, 0, 1 };
 byte subnet[] = {  255, 255, 255, 0 };
 
 const char digitMap[] = "0123456789abcdef";
@@ -78,7 +80,7 @@ static   LnBuf        LnTxBuffer ;
 static   lnMsg        *LnPacket;
 
 /* LoconetOcerTCP defaults to PORT 1024 */
-Server server(TCP_PORT);
+EthernetServer server(TCP_PORT);
 boolean gotATCPMessage = false; // whether or not you got a message from the client yet
 
 
@@ -92,10 +94,11 @@ static void dumpPacket(char* dPacket);
 void setup()
 {
 	/* First initialize the LocoNet interface */
-	LocoNet.init();
+	LocoNet.init(7);
 
 	/* Configure the serial port for 57600 baud */
 	Serial.begin(57600);
+  Serial.println("LoconetOverTCP buffer started!!");
 
 	/*Initialize a LocoNet packet buffer to buffer bytes from the PC */
 	initLnBuf(&LnTxBuffer) ;
@@ -110,7 +113,7 @@ void setup()
 
 void loop()
 {  
-	Client TcpClient = server.available();
+	EthernetClient TcpClient = server.available();
 
 
 	char RxByte = 0;
@@ -163,20 +166,13 @@ void loop()
 		case '7':
 		case '8':
 		case '9':
-			if(true == ProcessTCPRxByte(0x30, (uint8_t)RxByte, &LnTxBuffer))
-			{
-				IdenFound = false;
-			}
+			ProcessTCPRxByte(0x30, (uint8_t)RxByte, &LnTxBuffer);
 			break;
-
 		case 'A':
 		case 'B':
 		case 'C':
 		case 'F':
-			if(true == ProcessTCPRxByte(0x37, (uint8_t)RxByte, &LnTxBuffer))
-			{
-				IdenFound = false;
-			}
+			ProcessTCPRxByte(0x37, (uint8_t)RxByte, &LnTxBuffer);
 			break;
 
 		case ' ':
@@ -193,16 +189,9 @@ void loop()
 
 		case 'E':
 			if(IdenFound == true)
-			{
-				if(true == ProcessTCPRxByte(0x37, (uint8_t)RxByte, &LnTxBuffer))
-				{
-					IdenFound = false;
-				}
-			}
+				ProcessTCPRxByte(0x37, (uint8_t)RxByte, &LnTxBuffer);
 			else
-			{
 				IdenBytes++;
-			}
 			break;
 
 		case 'N':
@@ -211,12 +200,9 @@ void loop()
 
 		case 'D':
 			if(IdenFound == true)
-			{
-				if(true == ProcessTCPRxByte(0x37, (uint8_t)RxByte, &LnTxBuffer))
-				{
-					IdenFound = false;
-				}
-			}
+      {
+				ProcessTCPRxByte(0x37, (uint8_t)RxByte, &LnTxBuffer);				
+      }
 			else
 			{
 				if(IdenBytes == 3)
@@ -235,27 +221,21 @@ void loop()
 			if (IdenFound == true)
 			{
 				server.write("SENT OK \r\n");
+#ifdef DEBUG
+        Serial.println("!! SENT OK !! ");
+#endif
 				IdenFound = false;
 				IdenBytes = 0;
 			}
 			break;
 		}
-	}
-	else if (IdenFound == true)
-	{
-		server.write("SENT OK \r\n");
-#ifdef DEBUG
-		Serial.println(" ");
-		Serial.println("SENT OK \r\n");
-#endif
-		IdenFound = false;
-		IdenBytes = 0;
-	}
+	}	
 	else
 	{
 		IdenFound = false;
 		IdenBytes = 0;
 	}
+
 }
 
 
