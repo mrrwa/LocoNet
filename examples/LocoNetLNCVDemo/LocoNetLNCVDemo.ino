@@ -96,7 +96,7 @@ void dumpPacket(UhlenbrockMsg & ub) {
 	Serial.print(ub.PXCT1, HEX);
 	Serial.print(" ");
 	for (int i(0); i < 8; ++i) {
-		Serial.print(ub.D[i], HEX);
+		Serial.print(ub.payload.D[i], HEX);
 		Serial.print(" ");
 	}
 	Serial.write("\n");
