@@ -127,7 +127,25 @@ void LocoNetClass::setTxPin(uint8_t txPin)
   setTxPortAndPin(out, bitNum);
 }
 
-lnMsg* LocoNetClass::receive()
+// Check to see if any messages is ready to receive()?
+boolean LocoNetClass::available(void)
+{
+  return lnPacketReady(&LnBuffer);
+}
+
+// Check the size in bytes of waiting message
+uint8_t LocoNetClass::length(void)
+{
+  if (lnPacketReady(&LnBuffer))
+  {
+		lnMsg* m = (lnMsg *)&(LnBuffer.Buf[ LnBuffer.ReadIndex ]);
+		return getLnMsgSize(m);
+  } 
+  else
+		return 0;
+}
+
+lnMsg* LocoNetClass::receive(void)
 {
   return recvLnMsg(&LnBuffer);
 }

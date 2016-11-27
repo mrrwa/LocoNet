@@ -125,6 +125,8 @@ class LocoNetClass
     LocoNetClass();
     void        init(void);
     void        init(uint8_t txPin);
+    boolean 		available(void);
+    uint8_t			length(void);
     lnMsg*      receive(void);
     LN_STATUS   send(lnMsg *TxPacket);
     LN_STATUS   send(lnMsg *TxPacket, uint8_t PrioDelay);
