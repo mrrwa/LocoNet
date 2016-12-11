@@ -106,7 +106,7 @@
 #define LN_RX_DDR   DDRD
 #define LN_RX_BIT   PORTD4
 
-// Added support for the Tiny84
+// Added support for the Tiny84x
 #elif defined (__AVR_ATtiny84__) || defined (__AVR_ATtiny84A__) || defined (__AVR_ATtiny841__)
 
 #define LN_RX_PORT  PINA
@@ -130,7 +130,14 @@
 #define LN_SB_INT_ENABLE_BIT  ICIE1
 #define LN_SB_INT_STATUS_REG  TIFR1
 #define LN_SB_INT_STATUS_BIT  ICF1
-#define LN_TMR_SIGNAL         TIMER1_COMPA_vect
+
+// Added support for the Tiny84x
+#if defined (AVR_ATtiny84) || defined (AVR_ATtiny84A) || defined (AVR_ATtiny841)
+#define LN_TMR_SIGNAL TIM1_COMPA_vect
+#else
+#define LN_TMR_SIGNAL TIMER1_COMPA_vect
+#endif
+
 #define LN_TMR_INT_ENABLE_REG TIMSK1
 #define LN_TMR_INT_STATUS_REG TIFR1
 #define LN_TMR_INT_ENABLE_BIT OCIE1A
