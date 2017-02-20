@@ -709,7 +709,7 @@ void LocoNetThrottleClass::processMessage(lnMsg *LnPacket )
         LnPacket->sd.command = OPC_WR_SL_DATA ;
         LnPacket->sd.id1 = (uint8_t) ( myThrottleId & 0x7F ) ;
         LnPacket->sd.id2 = (uint8_t) ( myThrottleId >> 7 );
-        // jmg Loconet.Send( LnPacket ) ;
+        LocoNet.send( LnPacket ) ;
       }
       // Ok another throttle did a NULL MOVE with the same slot before we did
       // so we have to try again
