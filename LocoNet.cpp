@@ -687,29 +687,30 @@ void LocoNetThrottleClass::processMessage(lnMsg *LnPacket )
       // as it is possible that another throttle got in before us and took our slot.
       if( myAddress == SlotAddress )
       {
-        if(	( myState == TH_ST_SLOT_RESUME ) &&
-          ( myThrottleId != (uint16_t)( ( LnPacket->sd.id2 << 7 ) + LnPacket->sd.id1 ) ) )
+        if(	( myState == TH_ST_SLOT_RESUME ) && ( myThrottleId != (uint16_t)( ( LnPacket->sd.id2 << 7 ) + LnPacket->sd.id1 ) ) )
         {
           updateState( TH_ST_FREE, 1 ) ;
           if(notifyThrottleError)
-			notifyThrottleError( myUserData, TH_ER_NO_LOCO ) ;
+            notifyThrottleError( myUserData, TH_ER_NO_LOCO ) ;
         }
+        else
+        {
+          updateState( TH_ST_IN_USE, 1 ) ;
+          updateAddress( SlotAddress, 1 ) ;
+          updateSpeed( LnPacket->sd.spd, 1 ) ;
+          updateDirectionAndFunctions( LnPacket->sd.dirf, 1 ) ;
+          updateFunctions5to8( LnPacket->sd.snd, 1 ) ;
+          updateStatus1( LnPacket->sd.stat, 1 ) ;
 
-        updateState( TH_ST_IN_USE, 1 ) ;
-        updateAddress( SlotAddress, 1 ) ;
-        updateSpeed( LnPacket->sd.spd, 1 ) ;
-        updateDirectionAndFunctions( LnPacket->sd.dirf, 1 ) ;
-        updateFunctions5to8( LnPacket->sd.snd, 1 ) ;
-        updateStatus1( LnPacket->sd.stat, 1 ) ;
+            // We need to force a State update to cause a display refresh once all data is known
+          updateState( TH_ST_IN_USE, 1 ) ;
 
-        // We need to force a State update to cause a display refresh once all data is known
-        updateState( TH_ST_IN_USE, 1 ) ;
-
-        // Now Write our own Throttle Id to the slot and write it back to the command station
-        LnPacket->sd.command = OPC_WR_SL_DATA ;
-        LnPacket->sd.id1 = (uint8_t) ( myThrottleId & 0x7F ) ;
-        LnPacket->sd.id2 = (uint8_t) ( myThrottleId >> 7 );
-        LocoNet.send( LnPacket ) ;
+            // Now Write our own Throttle Id to the slot and write it back to the command station
+          LnPacket->sd.command = OPC_WR_SL_DATA ;
+          LnPacket->sd.id1 = (uint8_t) ( myThrottleId & 0x7F ) ;
+          LnPacket->sd.id2 = (uint8_t) ( myThrottleId >> 7 );
+          LocoNet.send( LnPacket ) ;
+        }
       }
       // Ok another throttle did a NULL MOVE with the same slot before we did
       // so we have to try again
@@ -750,14 +751,37 @@ void LocoNetThrottleClass::processMessage(lnMsg *LnPacket )
             updateState( TH_ST_FREE, 1 ) ;
           }
         }
-        else
+        else if( myState == TH_ST_SLOT_STEAL )
         {
-          if( myState == TH_ST_SLOT_FREE )
+        	// Make Sure the Slot is actually IN_USE already as we are not going to do an SLOT_MOVE etc
+          if( ( LnPacket->sd.stat & STAT1_SL_CONUP ) == 0 &&
+            ( LnPacket->sd.stat & LOCO_IN_USE ) == LOCO_IN_USE )
+          {  
+			mySlot = LnPacket->sd.slot ;
+
+			updateState( TH_ST_IN_USE, 1 ) ;
+
+			updateAddress( SlotAddress, 1 ) ;
+			updateSpeed( LnPacket->sd.spd, 1 ) ;
+			updateDirectionAndFunctions( LnPacket->sd.dirf, 1 ) ;
+			updateFunctions5to8( LnPacket->sd.snd, 1 ) ;
+			updateStatus1( LnPacket->sd.stat, 1 ) ;
+
+			  // We need to force a State update to cause a display refresh once all data is known
+			updateState( TH_ST_IN_USE, 1 ) ;
+		  }
+          else
           {
-            LocoNet.send( OPC_SLOT_STAT1, LnPacket->sd.slot, (uint8_t) ( myStatus1 & ~STAT1_SL_BUSY ) ) ;
-            mySlot = 0xFF ;
+            if(notifyThrottleError)
+				notifyThrottleError( myUserData, TH_ER_NO_LOCO ) ;
             updateState( TH_ST_FREE, 1 ) ;
           }
+        }
+        else if( myState == TH_ST_SLOT_FREE )
+        {
+          LocoNet.send( OPC_SLOT_STAT1, LnPacket->sd.slot, (uint8_t) ( myStatus1 & ~STAT1_SL_BUSY ) ) ;
+          mySlot = 0xFF ;
+          updateState( TH_ST_FREE, 1 ) ;
         }
       }
 
@@ -813,6 +837,23 @@ uint16_t LocoNetThrottleClass::getAddress(void)
 {
   return myAddress ;
 }
+
+TH_ERROR LocoNetThrottleClass::stealAddress(uint16_t Address)
+{
+  if( myState == TH_ST_FREE )
+  {
+    updateAddress( Address, 1 ) ;
+    updateState( TH_ST_SLOT_STEAL, 1 ) ;
+
+    LocoNet.send( OPC_LOCO_ADR, (uint8_t) ( Address >> 7 ), (uint8_t) ( Address & 0x7F ) ) ;
+    return TH_ER_OK ;
+  }
+
+  if(notifyThrottleError)
+	notifyThrottleError( myUserData, TH_ER_BUSY ) ;
+  return TH_ER_BUSY ;
+}
+
 
 TH_ERROR LocoNetThrottleClass::setAddress(uint16_t Address )
 {
@@ -1063,6 +1104,12 @@ const char *LocoNetThrottleClass::getStateStr( TH_STATE State )
 
   case TH_ST_SLOT_FREE:
     return "Slot Free" ;
+
+  case TH_ST_SLOT_RESUME:
+    return "Slot Resume" ;
+
+  case TH_ST_SLOT_STEAL:
+    return "Slot Steal" ;
 
   case TH_ST_IN_USE:
     return "In Use" ;

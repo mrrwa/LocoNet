@@ -158,6 +158,7 @@ typedef enum
   TH_ST_SLOT_MOVE,
   TH_ST_SLOT_FREE,
   TH_ST_SLOT_RESUME,
+  TH_ST_SLOT_STEAL,
   TH_ST_IN_USE
 } TH_STATE ;
 
@@ -205,6 +206,7 @@ class LocoNetThrottleClass
 
 	uint16_t getAddress(void) ;
 	TH_ERROR setAddress(uint16_t Address) ;
+	TH_ERROR stealAddress(uint16_t Address) ;
 	TH_ERROR resumeAddress(uint16_t Address, uint8_t LastSlot) ;
 	TH_ERROR dispatchAddress(uint16_t Address) ;
 	TH_ERROR acquireAddress(void) ;

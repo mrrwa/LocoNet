@@ -83,15 +83,20 @@ void DrawStaticText(void)
   Term.println();
   Term.println("Last Key   :");
   Term.println();
-  Term.println(F("Keys: A    - Enter Loco Address, <BS> to delete, <ENTER> to select"));
+  Term.println(F("Keys: A    - Acquire previously Dispatched Loco Address"));
+  Term.println(F("Keys: D    - Dispatch Loco Address"));
+  Term.println(F("Keys: L    - Request Loco Address"));
+  Term.println(F("Keys: S    - Steal Loco Address"));
   Term.println(F("Keys: Q    - Release Loco Address"));
+  Term.println(F("Keys: X    - Free Loco Address"));
   Term.println(F("Keys: [    - Reduce Speed"));
   Term.println(F("Keys: ]    - Increase Speed"));
   Term.println(F("Keys: F    - Forward"));
   Term.println(F("Keys: R    - Reverse"));
   Term.println(F("Keys: T    - Toggle Direction"));
   Term.println(F("Keys: <SP> - Stop"));
-  Term.println(F("Keys: 0..8 - Toggle Functions 0..8"));
+  Term.println(F("Keys: 0..8 - When IN_USE Toggle Functions 0..8"));
+  Term.println(F("Keys: 0..9, <BS> - When FREE Edit Address"));
 }
 
 void notifyThrottleAddress( uint8_t UserData, TH_STATE State, uint16_t Address, uint8_t Slot )
@@ -149,7 +154,7 @@ void notifyThrottleError( uint8_t UserData, TH_ERROR Error )
 void setup()
 {
   // First initialize the LocoNet interface
-  LocoNet.init();
+  LocoNet.init(7);
 
   // Configure the serial port for 57600 baud
   Serial.begin(115200);
@@ -187,13 +192,22 @@ void loop()
     Term.position(14,13);
     Term.print(inChar);
     switch(inChar){
-      case 'A': Throttle.setAddress(1234);
+      case 'L': Throttle.setAddress(LocoAddr);
+                break;
+      case 'A': Throttle.acquireAddress();
+                break;
+      case 'D': Throttle.dispatchAddress(LocoAddr);
+                LocoAddr = 0;
+                break;
+      case 'S': Throttle.stealAddress(LocoAddr);
                 break;
       case 'X': DrawStaticText();
-                Throttle.freeAddress(1234);
+                Throttle.freeAddress(LocoAddr);
+                LocoAddr = 0;
                 break;
       case 'Q': DrawStaticText();
                 Throttle.releaseAddress(); 
+                LocoAddr = 0;
                 break;
       case 'F': Throttle.setDirection(0); 
                 break;
@@ -207,8 +221,22 @@ void loop()
       case ']': if(Throttle.getSpeed() < 127 )
                   Throttle.setSpeed(Throttle.getSpeed() + 1);
                 break;
-      case ' ': Throttle.setSpeed(0); break;
-      default:  if( (inChar >= '0') && (inChar <= '8'))
+      case ' ': Throttle.setSpeed(0);
+                break;
+      
+      default:  if(Throttle.getState() == TH_ST_FREE) 
+                {
+                  if( (inChar >= '0') && (inChar <= '9') && (LocoAddr < 999) )
+                  {
+                    LocoAddr *= 10;
+                    LocoAddr += inChar - '0';
+                  }
+                  else if(inChar >= 7)
+                    LocoAddr /= 10;
+                    
+                  notifyThrottleAddress( 0, TH_ST_FREE, LocoAddr, 0 );
+                }
+                else if( (inChar >= '0') && (inChar <= '8'))
                   Throttle.setFunction( inChar - '0', !Throttle.getFunction(inChar - '0'));
                 break;
     }
