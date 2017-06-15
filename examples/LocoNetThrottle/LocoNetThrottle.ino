@@ -17,45 +17,44 @@
 
 *****************************************************************************
 
- Title :   LocoNet Infrared TV/VCR Remote controlled Throttle
- Author:   Alex Shepherd <kiwi64ajs@sourceforge.net>
- Date:     4-Dec-2004
- Software: AVR-GCC
- Target:   AtMega8
+ Title :   LocoNet Serial Terminal Throttle
+ Author:   Alex Shepherd <kiwi64ajs@gmail.com>
+ Date:     9-Mar-2017
+ Target:   ATMega328 Arduino
 
  DESCRIPTION
-    This project is a LocoNet throttle which gets it commands from a TV/VCR
-	Infrared remote control. Initially this will only work with the Sony SIRCS
-	remotes as this is what I have several of but support for others will
-	probably be added.
-	
+  This project is a LocoNet throttle which uses a Serial Terminal to Display 
+  the status and uses the keyboard to interact and perform control actions.
+  
 *****************************************************************************/
 
 #include <LocoNet.h>
 #include <BasicTerm.h>
 #include <ctype.h>
+#include <EEPROM.h>
 
-// Address Recall Stack Length
-#define RECALL_STACK_LEN  6
-#define AJS_RECALL_STACK  { 38, 44, 53, 99, 191, 192 }
+  // EEPROM storage locations for State
+#define EE_LAST_TH_STATE 0  // EEPROM Offset of  8-Bit Throttle State 
+#define EE_LAST_TH_SLOT  1  // EEPROM Offset of  8-Bit Throttle Slot Number
+#define EE_LAST_TH_ADDR  2  // EEPROM Offset of 16-Bit Throttle Loco Address 
+#define EE_LAST_TH_IDX   4  // EEPROM Offset of 16-Bit Throttle IDX (Should be Unique Throttle ID)
+
+#define DEFAULT_THROTTLE_IDX 0x3FF0
 
 typedef struct
 {
-	word	RecallStack[ RECALL_STACK_LEN ] ;
-	word	LastAddress ;
-	byte	LastSlot ;
-} TH_EE_CONFIG ;
+  uint8_t         lastSlot;
+  uint16_t        lastLocoAddr ;
+  uint16_t        lastThrottleIDX ;
+  TH_STATE        lastState;
+  TH_SPEED_STEPS  lastSpeedSteps;
+} STORED_STATE;
+STORED_STATE ss;
 
-TH_EE_CONFIG		eeConfig __attribute__((section(".eeprom")))
-	= { AJS_RECALL_STACK, 0, 0xFF };
-	
+uint16_t              LocoAddr ;
+
 LocoNetThrottleClass  Throttle ;
-word                  LocoAddr ;
-byte                  RecallIndex ;
-LnBuf                 LnRxBuffer ;
 lnMsg                 *RxPacket ;
-byte                  i ;
-byte                  tByte ;
 uint32_t              LastThrottleTimerTick;
 
 BasicTerm Term(&Serial);
@@ -77,23 +76,28 @@ void DrawStaticText(void)
 //                        1         2         3             
 //              0123456789012345678901234567890  
   Term.println();
-  Term.println("Status     :");
+  Term.println(F("Status     :"));
   Term.println();
-  Term.println("Error      :");
+  Term.println(F("Error      :"));
   Term.println();
-  Term.println("Last Key   :");
+  Term.println(F("Last Key   :"));
+  Term.println();
+  Term.println(F("Resumed    :"));
+  Term.println();
+  Term.println(F("Speed Steps:"));
   Term.println();
   Term.println(F("Keys: A    - Acquire previously Dispatched Loco Address"));
   Term.println(F("Keys: D    - Dispatch Loco Address"));
   Term.println(F("Keys: L    - Request Loco Address"));
   Term.println(F("Keys: S    - Steal Loco Address"));
-  Term.println(F("Keys: Q    - Release Loco Address"));
-  Term.println(F("Keys: X    - Free Loco Address"));
+  Term.println(F("Keys: Q    - Normal Release Loco Address"));
+  Term.println(F("Keys: X    - Force Loco Address to be Free"));
   Term.println(F("Keys: [    - Reduce Speed"));
   Term.println(F("Keys: ]    - Increase Speed"));
   Term.println(F("Keys: F    - Forward"));
   Term.println(F("Keys: R    - Reverse"));
   Term.println(F("Keys: T    - Toggle Direction"));
+  Term.println(F("Keys: P    - Select Next Speed Step Mode"));
   Term.println(F("Keys: <SP> - Stop"));
   Term.println(F("Keys: 0..8 - When IN_USE Toggle Functions 0..8"));
   Term.println(F("Keys: 0..9, <BS> - When FREE Edit Address"));
@@ -101,6 +105,15 @@ void DrawStaticText(void)
 
 void notifyThrottleAddress( uint8_t UserData, TH_STATE State, uint16_t Address, uint8_t Slot )
 {
+  if(State != TH_ST_FREE)
+  {
+    ss.lastState = State;
+    ss.lastLocoAddr = Address;
+    ss.lastSlot = Slot;
+    
+    EEPROM.put(0,ss);
+  }
+      
   Term.position(2,13);
   Term.print(Address);
   Term.print("     "); // Erase any extra chars
@@ -135,6 +148,12 @@ void notifyThrottleSlotStatus( uint8_t UserData, uint8_t Status ){};
 
 void notifyThrottleState( uint8_t UserData, TH_STATE PrevState, TH_STATE State )
 {
+  if(State == TH_ST_FREE) // We really only care about storing FREE and INUSE State to EEPROM
+  {
+    ss.lastState = State;  
+    EEPROM.put(0,ss);
+  }
+  
   Term.position(10, 13);
   Term.print(State, DEC);
   Term.print(' ');
@@ -151,6 +170,12 @@ void notifyThrottleError( uint8_t UserData, TH_ERROR Error )
   Term.print("                   ");
 }
 
+void notifyThrottleSpeedSteps( uint8_t UserData, TH_SPEED_STEPS SpeedSteps )
+{
+  Term.position(18, 13);
+  Term.print(Throttle.getSpeedStepStr(SpeedSteps));Term.print("     ");
+}
+
 void setup()
 {
   // First initialize the LocoNet interface
@@ -160,8 +185,34 @@ void setup()
   Serial.begin(115200);
   Term.init();
   DrawStaticText();
+
+// Uncomment to force Reset of EEPROM Values
+//  EEPROM.write(0,0xFF);
   
-  Throttle.init(0, 0, 9999);
+  EEPROM.get(0, ss);
+  if(ss.lastSlot == 0xFF) // EEPROM Default Erased State or a Valid slot? 
+  {
+    ss.lastLocoAddr = 0;
+    ss.lastThrottleIDX = DEFAULT_THROTTLE_IDX;
+    ss.lastState = TH_ST_FREE;
+    ss.lastSpeedSteps = TH_SP_ST_128_ADV;
+    EEPROM.put(0,ss) ;
+  }
+
+  Throttle.init(0, 0, ss.lastThrottleIDX);
+  Throttle.setSpeedSteps(ss.lastSpeedSteps);
+
+  Term.position(16, 13);
+  Term.print( (ss.lastState == TH_ST_IN_USE) ? F("Yes") : F("No "));
+  Term.print(F("  Last Slot: ")); Term.print(ss.lastSlot);
+  Term.print(F("  Last State: ")); Term.print(ss.lastState);
+  Term.print(F("  Last Address: ")); Term.print(ss.lastLocoAddr);
+  Term.print(F("  Last IDX: ")); Term.print(ss.lastThrottleIDX,HEX);
+  Term.print(F("  Last Speed Step Mode: ")); Term.print(Throttle.getSpeedStepStr(ss.lastSpeedSteps));
+  Term.print("     ");
+
+  if(ss.lastState == TH_ST_IN_USE)
+    Throttle.resumeAddress(ss.lastLocoAddr, ss.lastSlot);
 }
 
 boolean isTime(unsigned long *timeMark, unsigned long timeInterval)
@@ -194,33 +245,83 @@ void loop()
     switch(inChar){
       case 'L': Throttle.setAddress(LocoAddr);
                 break;
+                
       case 'A': Throttle.acquireAddress();
                 break;
-      case 'D': Throttle.dispatchAddress(LocoAddr);
+                
+      case 'D': if(Throttle.getState() == TH_ST_IN_USE)
+                  Throttle.dispatchAddress();
+                else
+                  Throttle.dispatchAddress(LocoAddr);
                 LocoAddr = 0;
                 break;
+                
       case 'S': Throttle.stealAddress(LocoAddr);
                 break;
-      case 'X': DrawStaticText();
-                Throttle.freeAddress(LocoAddr);
-                LocoAddr = 0;
+                
+      case 'X': if(Throttle.getState() == TH_ST_FREE)
+                {
+                  DrawStaticText();
+                  Throttle.freeAddress(LocoAddr);
+                  LocoAddr = 0;
+                }
                 break;
+                
       case 'Q': DrawStaticText();
                 Throttle.releaseAddress(); 
                 LocoAddr = 0;
                 break;
+                
       case 'F': Throttle.setDirection(0); 
                 break;
+                
+      case 'P': switch(ss.lastSpeedSteps)
+                {
+                case TH_SP_ST_14:      // 010=14 step MODE
+                  ss.lastSpeedSteps = TH_SP_ST_28;
+                  break;
+
+                case TH_SP_ST_28:    // 000=28 step/ 3 BYTE PKT regular mode
+                  ss.lastSpeedSteps = TH_SP_ST_28_TRI;
+                  break;
+     
+                case TH_SP_ST_28_TRI:  // 001=28 step. Generate Trinary packets for this Mobile ADR
+                  ss.lastSpeedSteps = TH_SP_ST_28_ADV;
+                  break;
+
+                case TH_SP_ST_28_ADV:  // 100=28 Step decoder ,Allow Advanced DCC consisting
+                  ss.lastSpeedSteps = TH_SP_ST_128;
+                  break;
+  
+                case TH_SP_ST_128:     // 011=send 128 speed mode packets
+                  ss.lastSpeedSteps = TH_SP_ST_128_ADV;
+                  break;
+    
+                case TH_SP_ST_128_ADV: // 111=128 Step decoder, Allow Advanced DCC consisting
+                default:
+                  ss.lastSpeedSteps = TH_SP_ST_14;
+                  break;
+                }
+                
+                Throttle.setSpeedSteps(ss.lastSpeedSteps);
+                EEPROM.put(0,ss);
+
+                break;
+                  
       case 'R': Throttle.setDirection(1); 
                 break;
+                
       case 'T': Throttle.setDirection(!Throttle.getDirection());
                 break;
+                
       case '[': if(Throttle.getSpeed() > 0 )
                   Throttle.setSpeed(Throttle.getSpeed() - 1);
                 break;
+                
       case ']': if(Throttle.getSpeed() < 127 )
                   Throttle.setSpeed(Throttle.getSpeed() + 1);
                 break;
+                
       case ' ': Throttle.setSpeed(0);
                 break;
       

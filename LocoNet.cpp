@@ -642,6 +642,16 @@ void LocoNetThrottleClass::updateFunctions5to8(uint8_t Func5to8, uint8_t ForceNo
   }
 }
 
+void LocoNetThrottleClass::updateSpeedSteps(TH_SPEED_STEPS SpeedSteps, uint8_t ForceNotify)
+{
+  if( ForceNotify || ((myStatus1 & 0x07) != SpeedSteps ))
+  {
+  	myStatus1 = (myStatus1 & 0xF8) | SpeedSteps;
+  	if(notifyThrottleSpeedSteps)
+  	  notifyThrottleSpeedSteps(myUserData, SpeedSteps);
+  }
+}
+
 #define SLOT_REFRESH_TICKS   		600   // 600 * 100ms = 60 seconds between speed refresh
 
 void LocoNetThrottleClass::process100msActions(void)
@@ -700,15 +710,20 @@ void LocoNetThrottleClass::processMessage(lnMsg *LnPacket )
           updateSpeed( LnPacket->sd.spd, 1 ) ;
           updateDirectionAndFunctions( LnPacket->sd.dirf, 1 ) ;
           updateFunctions5to8( LnPacket->sd.snd, 1 ) ;
+
+		  updateSpeedSteps(mySpeedSteps, 1);
+
           updateStatus1( LnPacket->sd.stat, 1 ) ;
 
             // We need to force a State update to cause a display refresh once all data is known
           updateState( TH_ST_IN_USE, 1 ) ;
 
-            // Now Write our own Throttle Id to the slot and write it back to the command station
+            // Now Write our own Speed Steps and Throttle Id to the slot and write it back to the command station
           LnPacket->sd.command = OPC_WR_SL_DATA ;
+          LnPacket->sd.stat = ( LnPacket->sd.stat & 0xf8) | mySpeedSteps;
           LnPacket->sd.id1 = (uint8_t) ( myThrottleId & 0x7F ) ;
           LnPacket->sd.id2 = (uint8_t) ( myThrottleId >> 7 );
+            	
           LocoNet.send( LnPacket ) ;
         }
       }
@@ -779,7 +794,7 @@ void LocoNetThrottleClass::processMessage(lnMsg *LnPacket )
         }
         else if( myState == TH_ST_SLOT_FREE )
         {
-          LocoNet.send( OPC_SLOT_STAT1, LnPacket->sd.slot, (uint8_t) ( myStatus1 & ~STAT1_SL_BUSY ) ) ;
+          LocoNet.send( OPC_SLOT_STAT1, LnPacket->sd.slot, (uint8_t) ( myStatus1 & ~(STAT1_SL_BUSY|STAT1_SL_ACTIVE) ) ) ;
           mySlot = 0xFF ;
           updateState( TH_ST_FREE, 1 ) ;
         }
@@ -904,6 +919,19 @@ TH_ERROR LocoNetThrottleClass::freeAddress(uint16_t Address )
   return TH_ER_BUSY ;
 }
 
+TH_ERROR LocoNetThrottleClass::dispatchAddress(void)
+{
+  if( myState == TH_ST_IN_USE)
+  {
+    updateState( TH_ST_FREE, 1 ) ;
+    LocoNet.send( OPC_MOVE_SLOTS, mySlot, 0 ) ;
+    return TH_ER_OK ;
+  }
+
+  if(notifyThrottleError)
+	notifyThrottleError( myUserData, TH_ER_NOT_SELECTED ) ;
+  return TH_ER_NOT_SELECTED ;
+}
 
 TH_ERROR LocoNetThrottleClass::dispatchAddress(uint16_t Address )
 {
@@ -936,15 +964,20 @@ TH_ERROR LocoNetThrottleClass::acquireAddress(void)
   return TH_ER_BUSY ;
 }
 
-void LocoNetThrottleClass::releaseAddress(void)
+TH_ERROR LocoNetThrottleClass::releaseAddress(void)
 {
   if( myState == TH_ST_IN_USE )
   {
-    LocoNet.send( OPC_SLOT_STAT1, mySlot, (uint8_t) ( myStatus1 & ~STAT1_SL_BUSY ) ) ;
+    LocoNet.send( OPC_SLOT_STAT1, mySlot, (uint8_t) ( myStatus1 & ~(STAT1_SL_BUSY|STAT1_SL_ACTIVE) ) ) ;
+
+    mySlot = 0xFF ;
+    updateState( TH_ST_FREE, 1 ) ;
+    return TH_ER_OK ;
   }
 
-  mySlot = 0xFF ;
-  updateState( TH_ST_FREE, 1 ) ;
+  if(notifyThrottleError)
+	notifyThrottleError( myUserData, TH_ER_NOT_SELECTED ) ;
+  return TH_ER_NOT_SELECTED;
 }
 
 uint8_t LocoNetThrottleClass::getSpeed(void)
@@ -1151,6 +1184,48 @@ const char *LocoNetThrottleClass::getErrorStr( TH_ERROR Error )
 
     return "Unknown" ;
   }
+}
+
+TH_SPEED_STEPS LocoNetThrottleClass::getSpeedSteps(void)
+{
+  return mySpeedSteps;
+}
+
+TH_ERROR LocoNetThrottleClass::setSpeedSteps(TH_SPEED_STEPS newSpeedSteps)
+{
+  mySpeedSteps = newSpeedSteps;
+  if((myState == TH_ST_IN_USE) && ((myStatus1 & 0x07) != mySpeedSteps))
+  {
+  	myStatus1 = (myStatus1 & 0xf8) | mySpeedSteps;
+  	LocoNet.send(OPC_SLOT_STAT1, mySlot, myStatus1);
+  }
+  updateSpeedSteps(mySpeedSteps, 1);
+}
+
+const char *LocoNetThrottleClass::getSpeedStepStr( TH_SPEED_STEPS speedStep )
+{
+  switch( speedStep )
+  {
+  case TH_SP_ST_28:	  // 000=28 step/ 3 BYTE PKT regular mode
+    return "28";
+     
+  case TH_SP_ST_28_TRI:  // 001=28 step. Generate Trinary packets for this Mobile ADR
+    return "28 Tri";
+  
+  case TH_SP_ST_14:      // 010=14 step MODE
+    return "14";
+  
+  case TH_SP_ST_128:     // 011=send 128 speed mode packets
+    return "128";
+
+  case TH_SP_ST_28_ADV:  // 100=28 Step decoder ,Allow Advanced DCC consisting
+    return "28 Adv";
+    
+  case TH_SP_ST_128_ADV: // 111=128 Step decoder, Allow Advanced DCC consisting
+    return "128 Adv";
+  }
+
+  return "Unknown";
 }
 
 #define FC_FLAG_DCS100_COMPATIBLE_SPEED	0x01
