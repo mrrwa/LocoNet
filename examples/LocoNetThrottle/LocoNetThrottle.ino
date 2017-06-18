@@ -23,9 +23,11 @@
  Target:   ATMega328 Arduino
 
  DESCRIPTION
-  This project is a LocoNet throttle which uses a Serial Terminal to Display 
-  the status and uses the keyboard to interact and perform control actions.
-  
+  This project is a LocoNet throttle which uses a Serial Terminal (VT100 Emulation) 
+  to Display the status and uses the keyboard to interact and perform control actions.
+
+  The BasicTerm library can be found here: https://github.com/nottwo/BasicTerm
+
 *****************************************************************************/
 
 #include <LocoNet.h>
@@ -41,6 +43,8 @@
 
 #define DEFAULT_THROTTLE_IDX 0x3FF0
 
+#define RECALL_BUFFER_SIZE 8
+
 typedef struct
 {
   uint8_t         lastSlot;
@@ -48,10 +52,12 @@ typedef struct
   uint16_t        lastThrottleIDX ;
   TH_STATE        lastState;
   TH_SPEED_STEPS  lastSpeedSteps;
+  int16_t         recallBuffer[RECALL_BUFFER_SIZE];
 } STORED_STATE;
 STORED_STATE ss;
 
-uint16_t              LocoAddr ;
+uint16_t          LocoAddr ;
+uint8_t           recallIndex;
 
 LocoNetThrottleClass  Throttle ;
 lnMsg                 *RxPacket ;
@@ -64,9 +70,9 @@ void DrawStaticText(void)
   Term.show_cursor(0);
   Term.cls();
   Term.position(0,0);
-  Term.println(F("LocoNet Throttle Library Demonstration Version: 1"));
+  Term.println(F("LocoNet Throttle Library Demonstration Version: 3"));
   Term.println();
-  Term.println(F("Address    :"));
+  Term.print(F("Address    : ")); Term.println(LocoAddr);
   Term.println();
   Term.println(F("Speed      :"));
   Term.println();
@@ -84,39 +90,95 @@ void DrawStaticText(void)
   Term.println();
   Term.println(F("Resumed    :"));
   Term.println();
-  Term.println(F("Speed Steps:"));
+  Term.print(F("Speed Steps: "));
+  Term.print(Throttle.getSpeedStepStr(ss.lastSpeedSteps));
+  Term.println("     ");
   Term.println();
-  Term.println(F("Keys: A    - Acquire previously Dispatched Loco Address"));
-  Term.println(F("Keys: D    - Dispatch Loco Address"));
-  Term.println(F("Keys: L    - Request Loco Address"));
-  Term.println(F("Keys: S    - Steal Loco Address"));
-  Term.println(F("Keys: Q    - Normal Release Loco Address"));
-  Term.println(F("Keys: X    - Force Loco Address to be Free"));
-  Term.println(F("Keys: [    - Reduce Speed"));
-  Term.println(F("Keys: ]    - Increase Speed"));
-  Term.println(F("Keys: F    - Forward"));
-  Term.println(F("Keys: R    - Reverse"));
-  Term.println(F("Keys: T    - Toggle Direction"));
-  Term.println(F("Keys: P    - Select Next Speed Step Mode"));
-  Term.println(F("Keys: <SP> - Stop"));
-  Term.println(F("Keys: 0..8 - When IN_USE Toggle Functions 0..8"));
-  Term.println(F("Keys: 0..9, <BS> - When FREE Edit Address"));
+  Term.print(F("Recall Buffer:"));
+  printRecallBuffer();
+  Term.println();
+  Term.println();
+  Term.println(F("Keys: A           - Acquire previously Dispatched Loco Address"));
+  Term.println(F("Keys: D           - Dispatch Loco Address"));
+  Term.println(F("Keys: <Enter>     - Select Loco Address"));
+  Term.println(F("Keys: S           - Steal Loco Address"));
+  Term.println(F("Keys: I           - Idle Loco,    (Keep Address,  Slot Not Active)"));
+  Term.println(F("Keys: R           - Release Loco, (Keep Address,  Slot stays Active)"));
+  Term.println(F("Keys: F           - Free Loco,    (Clear Address, Slot not Active)"));
+  Term.println(F("Keys: Z           - Force Loco Address to be Freed"));
+  Term.println(F("Keys: Arrow LEFT  - Reduce Speed"));
+  Term.println(F("Keys: Arrow RIGHT - Increase Speed"));
+  Term.println(F("Keys: Arrow UP    - Forward"));
+  Term.println(F("Keys: Arrow Down  - Reverse"));
+  Term.println(F("Keys: T           - Toggle Direction"));
+  Term.println(F("Keys: <SP>        - Stop"));
+  Term.println(F("Keys: [ ]         - Release current Loco and select Address from Recall Buffer"));
+  Term.println(F("Keys: P           - Select Next Speed Step Mode"));
+  Term.println(F("Keys: 0..8        - When IN_USE - Toggle Functions 0..8"));
+  Term.println(F("Keys: 0..9, <BS>  - When not IN_USE - Edit Address"));
+}
+
+void printRecallBuffer(void)
+{
+  Term.position(20, 15);
+  for(uint8_t i = 0; i < RECALL_BUFFER_SIZE; i++)
+  {
+    if(ss.recallBuffer[i] != -1)
+    {
+      if( ss.recallBuffer[i] == LocoAddr)
+        Term.set_attribute(BT_BOLD);
+        
+      Term.print(ss.recallBuffer[i]);
+      Term.print(' ');
+
+      if( ss.recallBuffer[i] == LocoAddr)
+        Term.set_attribute(BT_NORMAL);
+    }
+  }
+}
+
+void insertRecallBuffer(int16_t Address)
+{
+  memmove(&ss.recallBuffer[1], &ss.recallBuffer[0], (RECALL_BUFFER_SIZE - 1) * 2);
+  ss.recallBuffer[0] = Address;
+  EEPROM.put(0,ss) ;
+  recallIndex = 0;
+}
+
+uint8_t posRecallBuffer(int16_t Address)
+{
+  uint8_t i;
+  for(i = 0; i < RECALL_BUFFER_SIZE; i++)
+    if(ss.recallBuffer[i] == Address)
+      break;
+      
+  return i;    
+}
+
+void printAddress(uint16_t Address)
+{
+  Term.position(2,13);
+  Term.print(Address);
+  Term.print("     "); // Erase any extra chars
 }
 
 void notifyThrottleAddress( uint8_t UserData, TH_STATE State, uint16_t Address, uint8_t Slot )
 {
-  if(State != TH_ST_FREE)
+  if(State == TH_ST_IN_USE)
   {
     ss.lastState = State;
     ss.lastLocoAddr = Address;
     ss.lastSlot = Slot;
-    
+
+      // Check if the Address is in the Recall Buffer, if not insert it
+    if(posRecallBuffer(Address) == RECALL_BUFFER_SIZE)
+    {
+      insertRecallBuffer(Address);
+      printRecallBuffer();
+    }
     EEPROM.put(0,ss);
   }
-      
-  Term.position(2,13);
-  Term.print(Address);
-  Term.print("     "); // Erase any extra chars
+  printAddress(Address);
 };
 
 void notifyThrottleSpeed( uint8_t UserData, TH_STATE State, uint8_t Speed )
@@ -148,7 +210,7 @@ void notifyThrottleSlotStatus( uint8_t UserData, uint8_t Status ){};
 
 void notifyThrottleState( uint8_t UserData, TH_STATE PrevState, TH_STATE State )
 {
-  if(State == TH_ST_FREE) // We really only care about storing FREE and INUSE State to EEPROM
+  if(State <= TH_ST_RELEASE) // We really only want to store non active or final states to EEPROM
   {
     ss.lastState = State;  
     EEPROM.put(0,ss);
@@ -184,7 +246,6 @@ void setup()
   // Configure the serial port for 57600 baud
   Serial.begin(115200);
   Term.init();
-  DrawStaticText();
 
 // Uncomment to force Reset of EEPROM Values
 //  EEPROM.write(0,0xFF);
@@ -196,9 +257,15 @@ void setup()
     ss.lastThrottleIDX = DEFAULT_THROTTLE_IDX;
     ss.lastState = TH_ST_FREE;
     ss.lastSpeedSteps = TH_SP_ST_128_ADV;
+    for(uint8_t i = 0; i < RECALL_BUFFER_SIZE; i++) 
+      ss.recallBuffer[i] = -1;
     EEPROM.put(0,ss) ;
   }
 
+  LocoAddr = ss.lastLocoAddr;
+
+  DrawStaticText();
+  
   Throttle.init(0, 0, ss.lastThrottleIDX);
   Throttle.setSpeedSteps(ss.lastSpeedSteps);
 
@@ -212,7 +279,10 @@ void setup()
   Term.print("     ");
 
   if(ss.lastState == TH_ST_IN_USE)
+  {
+    LocoAddr = ss.lastLocoAddr;
     Throttle.resumeAddress(ss.lastLocoAddr, ss.lastSlot);
+  }
 }
 
 boolean isTime(unsigned long *timeMark, unsigned long timeInterval)
@@ -237,42 +307,70 @@ void loop()
       Throttle.processMessage(RxPacket) ; 
   }
   
-  if( Serial.available())
+  if( Term.available())
   {
-    int16_t inChar = toupper(Serial.read());
+    int16_t inChar = Term.get_key();
+    if(inChar < 127)
+      inChar = toupper(inChar);
+      
     Term.position(14,13);
     Term.print(inChar);
     switch(inChar){
-      case 'L': Throttle.setAddress(LocoAddr);
+      case 13 : if(Throttle.getState() != TH_ST_IN_USE)
+                  Throttle.setAddress(LocoAddr);
                 break;
                 
-      case 'A': Throttle.acquireAddress();
+      case 'A': if(Throttle.getState() != TH_ST_IN_USE)
+                  Throttle.acquireAddress();
                 break;
                 
       case 'D': if(Throttle.getState() == TH_ST_IN_USE)
                   Throttle.dispatchAddress();
                 else
                   Throttle.dispatchAddress(LocoAddr);
-                LocoAddr = 0;
-                break;
-                
-      case 'S': Throttle.stealAddress(LocoAddr);
-                break;
-                
-      case 'X': if(Throttle.getState() == TH_ST_FREE)
-                {
                   DrawStaticText();
-                  Throttle.freeAddress(LocoAddr);
-                  LocoAddr = 0;
+                break;
+                
+      case 'S': if(Throttle.getState() != TH_ST_IN_USE)
+                  Throttle.stealAddress(LocoAddr);
+                break;
+                
+      case 'F': if(Throttle.getState() == TH_ST_IN_USE)
+                {
+                  Throttle.freeAddress();
+                  DrawStaticText();
                 }
                 break;
                 
-      case 'Q': DrawStaticText();
-                Throttle.releaseAddress(); 
-                LocoAddr = 0;
+      case 'I': if(Throttle.getState() == TH_ST_IN_USE)
+                {
+                  Throttle.idleAddress();
+                  DrawStaticText();
+                }
                 break;
                 
-      case 'F': Throttle.setDirection(0); 
+      case 'R': if(Throttle.getState() == TH_ST_IN_USE)
+                {
+                  Throttle.releaseAddress(); 
+                  DrawStaticText();
+                }
+                break;
+
+      case 'Z': if(Throttle.getState() <= TH_ST_RELEASE)
+                {
+                  Throttle.freeAddressForce(LocoAddr);
+                  DrawStaticText();
+                }
+                break;
+                
+      case BT_KEY_UP :
+                if(Throttle.getState() == TH_ST_IN_USE)
+                  Throttle.setDirection(0); 
+                break;
+                
+      case BT_KEY_DOWN :
+                if(Throttle.getState() == TH_ST_IN_USE)
+                  Throttle.setDirection(1); 
                 break;
                 
       case 'P': switch(ss.lastSpeedSteps)
@@ -308,34 +406,61 @@ void loop()
 
                 break;
                   
-      case 'R': Throttle.setDirection(1); 
+      case 'T': if(Throttle.getState() == TH_ST_IN_USE)
+                  Throttle.setDirection(!Throttle.getDirection());
                 break;
-                
-      case 'T': Throttle.setDirection(!Throttle.getDirection());
-                break;
-                
-      case '[': if(Throttle.getSpeed() > 0 )
+
+      case BT_KEY_LEFT :
+                if((Throttle.getState() == TH_ST_IN_USE) && (Throttle.getSpeed() > 0 ))
                   Throttle.setSpeed(Throttle.getSpeed() - 1);
                 break;
                 
-      case ']': if(Throttle.getSpeed() < 127 )
+      case BT_KEY_RIGHT :
+                if((Throttle.getState() == TH_ST_IN_USE) && (Throttle.getSpeed() < 127 ))
                   Throttle.setSpeed(Throttle.getSpeed() + 1);
                 break;
                 
-      case ' ': Throttle.setSpeed(0);
+      case ' ': if(Throttle.getState() == TH_ST_IN_USE)
+                  Throttle.setSpeed(0);
                 break;
-      
-      default:  if(Throttle.getState() == TH_ST_FREE) 
+
+      case '[': if(recallIndex > 0)
+                {
+                  recallIndex--;
+                
+                  if(Throttle.getState() == TH_ST_IN_USE)
+                    Throttle.releaseAddress();
+
+                  LocoAddr = ss.recallBuffer[recallIndex];
+
+                  DrawStaticText();
+                }
+                break;
+
+      case ']': if(recallIndex < (RECALL_BUFFER_SIZE - 1))
+                {
+                  recallIndex++;
+                
+                  if(Throttle.getState() == TH_ST_IN_USE)
+                    Throttle.releaseAddress();
+
+                  LocoAddr = ss.recallBuffer[recallIndex];
+
+                  DrawStaticText();
+                }
+                break;
+
+      default:  if(Throttle.getState() <= TH_ST_RELEASE) 
                 {
                   if( (inChar >= '0') && (inChar <= '9') && (LocoAddr < 999) )
                   {
                     LocoAddr *= 10;
                     LocoAddr += inChar - '0';
                   }
-                  else if(inChar >= 7)
+                  else if(inChar == 8)
                     LocoAddr /= 10;
                     
-                  notifyThrottleAddress( 0, TH_ST_FREE, LocoAddr, 0 );
+                  printAddress(LocoAddr);
                 }
                 else if( (inChar >= '0') && (inChar <= '8'))
                   Throttle.setFunction( inChar - '0', !Throttle.getFunction(inChar - '0'));

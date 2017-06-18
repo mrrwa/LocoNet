@@ -152,11 +152,13 @@ extern LocoNetClass LocoNet;
 typedef enum
 {
   TH_ST_FREE   = 0,
+  TH_ST_IDLE,
+  TH_ST_RELEASE,
   TH_ST_ACQUIRE,
   TH_ST_SELECT,
   TH_ST_DISPATCH,
   TH_ST_SLOT_MOVE,
-  TH_ST_SLOT_FREE,
+  TH_ST_SLOT_FORCE_FREE,
   TH_ST_SLOT_RESUME,
   TH_ST_SLOT_STEAL,
   TH_ST_IN_USE
@@ -223,9 +225,11 @@ class LocoNetThrottleClass
 	TH_ERROR dispatchAddress(void) ;
 	TH_ERROR acquireAddress(void) ;
 	TH_ERROR releaseAddress(void) ;
-
+    TH_ERROR idleAddress(void) ;
+    TH_ERROR freeAddress(void) ;
+    
 	TH_ERROR dispatchAddress(uint16_t Address) ;
-	TH_ERROR freeAddress(uint16_t Address) ;
+	TH_ERROR freeAddressForce(uint16_t Address) ;
 
 	uint8_t getSpeed(void) ;
 	TH_ERROR setSpeed(uint8_t Speed) ;

@@ -713,14 +713,14 @@ void LocoNetThrottleClass::processMessage(lnMsg *LnPacket )
 
 		  updateSpeedSteps(mySpeedSteps, 1);
 
-          updateStatus1( LnPacket->sd.stat, 1 ) ;
-
             // We need to force a State update to cause a display refresh once all data is known
           updateState( TH_ST_IN_USE, 1 ) ;
 
             // Now Write our own Speed Steps and Throttle Id to the slot and write it back to the command station
           LnPacket->sd.command = OPC_WR_SL_DATA ;
           LnPacket->sd.stat = ( LnPacket->sd.stat & 0xf8) | mySpeedSteps;
+          updateStatus1( LnPacket->sd.stat, 1 ) ;
+
           LnPacket->sd.id1 = (uint8_t) ( myThrottleId & 0x7F ) ;
           LnPacket->sd.id2 = (uint8_t) ( myThrottleId >> 7 );
             	
@@ -792,7 +792,7 @@ void LocoNetThrottleClass::processMessage(lnMsg *LnPacket )
             updateState( TH_ST_FREE, 1 ) ;
           }
         }
-        else if( myState == TH_ST_SLOT_FREE )
+        else if( myState == TH_ST_SLOT_FORCE_FREE )
         {
           LocoNet.send( OPC_SLOT_STAT1, LnPacket->sd.slot, (uint8_t) ( myStatus1 & ~(STAT1_SL_BUSY|STAT1_SL_ACTIVE) ) ) ;
           mySlot = 0xFF ;
@@ -855,7 +855,7 @@ uint16_t LocoNetThrottleClass::getAddress(void)
 
 TH_ERROR LocoNetThrottleClass::stealAddress(uint16_t Address)
 {
-  if( myState == TH_ST_FREE )
+  if( myState <= TH_ST_RELEASE )
   {
     updateAddress( Address, 1 ) ;
     updateState( TH_ST_SLOT_STEAL, 1 ) ;
@@ -872,7 +872,7 @@ TH_ERROR LocoNetThrottleClass::stealAddress(uint16_t Address)
 
 TH_ERROR LocoNetThrottleClass::setAddress(uint16_t Address )
 {
-  if( myState == TH_ST_FREE )
+  if( myState <= TH_ST_RELEASE )
   {
     updateAddress( Address, 1 ) ;
     updateState( TH_ST_SELECT, 1 ) ;
@@ -888,7 +888,7 @@ TH_ERROR LocoNetThrottleClass::setAddress(uint16_t Address )
 
 TH_ERROR LocoNetThrottleClass::resumeAddress(uint16_t Address, uint8_t LastSlot )
 {
-  if( myState == TH_ST_FREE )
+  if( myState <= TH_ST_RELEASE )
   {
     mySlot = LastSlot ;
     updateAddress( Address, 1 ) ;
@@ -903,12 +903,12 @@ TH_ERROR LocoNetThrottleClass::resumeAddress(uint16_t Address, uint8_t LastSlot 
   return TH_ER_BUSY ;
 }
 
-TH_ERROR LocoNetThrottleClass::freeAddress(uint16_t Address )
+TH_ERROR LocoNetThrottleClass::freeAddressForce(uint16_t Address )
 {
-  if( myState == TH_ST_FREE )
+  if( myState <= TH_ST_RELEASE )
   {
     updateAddress( Address, 1 ) ;
-    updateState( TH_ST_SLOT_FREE, 1 ) ;
+    updateState( TH_ST_SLOT_FORCE_FREE, 1 ) ;
 
     LocoNet.send( OPC_LOCO_ADR, (uint8_t) ( Address >> 7 ), (uint8_t) ( Address & 0x7F ) ) ;
     return TH_ER_OK ;
@@ -921,7 +921,7 @@ TH_ERROR LocoNetThrottleClass::freeAddress(uint16_t Address )
 
 TH_ERROR LocoNetThrottleClass::dispatchAddress(void)
 {
-  if( myState == TH_ST_IN_USE)
+  if( myState == TH_ST_IN_USE )
   {
     updateState( TH_ST_FREE, 1 ) ;
     LocoNet.send( OPC_MOVE_SLOTS, mySlot, 0 ) ;
@@ -935,7 +935,7 @@ TH_ERROR LocoNetThrottleClass::dispatchAddress(void)
 
 TH_ERROR LocoNetThrottleClass::dispatchAddress(uint16_t Address )
 {
-  if( myState == TH_ST_FREE)
+  if( myState <= TH_ST_RELEASE )
   {
     updateAddress( Address, 1 ) ;
     updateState( TH_ST_DISPATCH, 1 ) ;
@@ -951,7 +951,7 @@ TH_ERROR LocoNetThrottleClass::dispatchAddress(uint16_t Address )
 
 TH_ERROR LocoNetThrottleClass::acquireAddress(void)
 {
-  if( myState == TH_ST_FREE )
+  if( myState <= TH_ST_RELEASE )
   {
     updateState( TH_ST_ACQUIRE, 1 ) ;
 
@@ -965,6 +965,38 @@ TH_ERROR LocoNetThrottleClass::acquireAddress(void)
 }
 
 TH_ERROR LocoNetThrottleClass::releaseAddress(void)
+{
+  if( myState == TH_ST_IN_USE )
+  {
+    LocoNet.send( OPC_SLOT_STAT1, mySlot, (uint8_t) ( myStatus1 & ~(STAT1_SL_BUSY) ) ) ;
+
+    mySlot = 0xFF ;
+    updateState( TH_ST_RELEASE, 1 ) ;
+    return TH_ER_OK ;
+  }
+
+  if(notifyThrottleError)
+	notifyThrottleError( myUserData, TH_ER_NOT_SELECTED ) ;
+  return TH_ER_NOT_SELECTED;
+}
+
+TH_ERROR LocoNetThrottleClass::idleAddress(void)
+{
+  if( myState == TH_ST_IN_USE )
+  {
+    LocoNet.send( OPC_SLOT_STAT1, mySlot, (uint8_t) ( myStatus1 & ~(STAT1_SL_ACTIVE) ) ) ;
+
+    mySlot = 0xFF ;
+    updateState( TH_ST_FREE, 1 ) ;
+    return TH_ER_OK ;
+  }
+
+  if(notifyThrottleError)
+	notifyThrottleError( myUserData, TH_ER_NOT_SELECTED ) ;
+  return TH_ER_NOT_SELECTED;
+}
+
+TH_ERROR LocoNetThrottleClass::freeAddress(void)
 {
   if( myState == TH_ST_IN_USE )
   {
@@ -1123,6 +1155,12 @@ const char *LocoNetThrottleClass::getStateStr( TH_STATE State )
   case TH_ST_FREE:
     return "Free" ;
 
+  case TH_ST_IDLE:
+    return "Idle" ;
+
+  case TH_ST_RELEASE:
+    return "Release" ;
+
   case TH_ST_ACQUIRE:
     return "Acquire" ;
 
@@ -1135,8 +1173,8 @@ const char *LocoNetThrottleClass::getStateStr( TH_STATE State )
   case TH_ST_SLOT_MOVE:
     return "Slot Move" ;
 
-  case TH_ST_SLOT_FREE:
-    return "Slot Free" ;
+  case TH_ST_SLOT_FORCE_FREE:
+    return "Slot Force Free" ;
 
   case TH_ST_SLOT_RESUME:
     return "Slot Resume" ;
