@@ -987,7 +987,7 @@ TH_ERROR LocoNetThrottleClass::idleAddress(void)
     LocoNet.send( OPC_SLOT_STAT1, mySlot, (uint8_t) ( myStatus1 & ~(STAT1_SL_ACTIVE) ) ) ;
 
     mySlot = 0xFF ;
-    updateState( TH_ST_FREE, 1 ) ;
+    updateState( TH_ST_IDLE, 1 ) ;
     return TH_ER_OK ;
   }
 
