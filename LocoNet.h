@@ -74,6 +74,7 @@
 
 #include "utility/ln_buf.h"
 #include "utility/ln_opc.h"
+#include "utility/utils.h"
 
 typedef enum
 {
