@@ -1,19 +1,40 @@
-// Arduino - Leonardo based USB LocoNet PC Interface Demo
+// Arduino - AVR ATmega32U4 based USB LocoNet PC Interface Demo
+
+#if !defined(ARDUINO_ARCH_AVR) and !defined(ARDUINO_MEGA_32U4)
+#error "This sketch only supports the AVR ATmega32U4 processor as it relies on specific USB Port functionality"
+#endif 
 
 #include <LocoNet.h>
-#include <elapsedMillis.h>  // See http://playground.arduino.cc/Code/ElapsedMillis
 
-elapsedMillis  txElapsedMillis;
-elapsedMillis  rxElapsedMillis;
+// There are a number of ATmega32U4 boards available but each may have different pin numbers for on-baord LEDs.
+//
+// This example sketch was developed using the Sparkfun Arduino Pro Mico (see: https://www.sparkfun.com/products/12640) 
+// and a small LocoNet interface shield designed by John Plocher specifically to match up with the Arduino Pro Micro footprint
+// that can be found here: http://www.spcoast.com/wiki/index.php/Core-Locobuffer
 
+// The LocoNet Tx/Rx traffic can be indicated using some LEDs. The default values below are for the Sparkfun Arduino Pro Micro board.
+// If your board doesn't have LEDs or you don't want to use them, comment out the two #define lines below
 #define TX_LED  30
 #define RX_LED  17
+
+#if defined(TX_LED) or defined(RX_LED)
+// If you're using LEDs to indicate LocoNet traffic then define the HIGH/LOW state to turn the LEDs ON/OFF in the two lines below
 #define LED_ON  LOW
 #define LED_OFF HIGH
 
+// These elapsedMillis timers are used to turn off the Tx/Rx LEDs after a short delay, so they're only needed when the LEDs are used
+#include <elapsedMillis.h>  // See http://playground.arduino.cc/Code/ElapsedMillis
+elapsedMillis  txElapsedMillis;
+elapsedMillis  rxElapsedMillis;
+
+#endif
+
 #define VERSION 2
 
-// Rx Pin on the LeoStick is D4
+// The Rx Pin on the ATmega32U4 always uses the ICP input so that is fixed and enabled in the Library.
+// However the Tx pin can be any other available pin on the board.
+// For the Sparkfun Arduino Pro Micro and the Core-Locobuffer shield it uses Digital pin 5
+
 #define  TX_PIN 5
 
 static   LnBuf        LnTxBuffer ;
@@ -81,11 +102,15 @@ void setup()
   LnTxPacket = NULL;
   LnStatsPacket = NULL;
 
+#ifdef RX_LED
   pinMode(RX_LED, OUTPUT);
   digitalWrite(RX_LED, LED_OFF);
+#endif
 
+#ifdef TX_LED
   pinMode(TX_LED, OUTPUT);
   digitalWrite(TX_LED, LED_OFF);
+#endif
 }
 
 void loop()
@@ -105,9 +130,10 @@ void loop()
 
   if( LnRxPacket )
   {
+#ifdef RX_LED
     digitalWrite(RX_LED, LED_ON);
     rxElapsedMillis = 0;
-    
+#endif    
       // Get the length of the received packet
     uint8_t Length = getLnMsgSize( LnRxPacket ) ;
 
@@ -152,14 +178,20 @@ void loop()
     {
       LnTxPacket = NULL;
       
+#ifdef TX_LED
       digitalWrite(TX_LED, LED_ON);
       txElapsedMillis = 0;
+#endif      
     }
   }
 
+#ifdef RX_LED
   if(rxElapsedMillis > 50)
     digitalWrite(RX_LED, LED_OFF);
+#endif
 
+#ifdef TX_LED
   if(txElapsedMillis > 50)
     digitalWrite(TX_LED, LED_OFF);
+#endif    
 }
