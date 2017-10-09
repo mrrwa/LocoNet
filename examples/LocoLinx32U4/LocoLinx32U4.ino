@@ -33,9 +33,9 @@ elapsedMillis  rxElapsedMillis;
 
 // The Rx Pin on the ATmega32U4 always uses the ICP input so that is fixed and enabled in the Library.
 // However the Tx pin can be any other available pin on the board.
-// For the Sparkfun Arduino Pro Micro and the Core-Locobuffer shield it uses Digital pin 5
+// For the Sparkfun Arduino Pro Micro and the Core-Locobuffer shield it uses Digital pin 7
 
-#define  TX_PIN 5
+#define  TX_PIN 7
 
 static   LnBuf        LnTxBuffer ;
 static   lnMsg        *LnTxPacket;

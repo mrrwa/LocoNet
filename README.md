@@ -16,6 +16,15 @@ and the stats are updated approproately.
 This library uses TIMER1 & ICP (UNO) and/or TIMER5 and ICP5 (MEGA)
 resources and associated interrupt handler hooks.
 
+Currently the library only supports the AVR mega and tiny range that
+have an Input Capture Unit (ICP) associated with a 16-Bit Timer/Counter.
+
+It's known to work with:
+- UNO (ATmega328)
+- MEGA (ATmega2560)
+- Leonardo, LeoStick, Arduino Pro Micro (ATmega32U4)
+- Various AVRTiny Boards (ATTiny84, ATTiny84A, ATTiny841)
+
 **IMPORTANT**
 
 Some of the message formats used in this code are Copyright Digitrax,
