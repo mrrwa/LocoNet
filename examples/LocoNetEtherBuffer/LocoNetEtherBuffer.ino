@@ -65,7 +65,7 @@
 #define DEBUG /* enable this to print debug information via the serial port */
 
 /* This is the TCP port used to communicate over ethernet 
-   LoconetOcerTCP defaults to PORT 1024 */
+   LoconetOverTCP defaults to PORT 1024 */
 #define TCP_PORT 1234
 
 /* Modify these variables to match your network */
@@ -79,7 +79,7 @@ const char receiveString[] = "RECEIVE ";
 static   LnBuf        LnTxBuffer ;
 static   lnMsg        *LnPacket;
 
-/* LoconetOcerTCP defaults to PORT 1024 */
+/* LoconetOverTCP defaults to PORT 1024 */
 EthernetServer server(TCP_PORT);
 boolean gotATCPMessage = false; // whether or not you got a message from the client yet
 
