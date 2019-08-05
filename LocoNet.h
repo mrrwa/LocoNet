@@ -247,6 +247,8 @@ class LocoNetThrottleClass
 	TH_ERROR setSpeedSteps(TH_SPEED_STEPS newSpeedSteps);
 
 	TH_STATE getState(void) ;
+	uint8_t getSlot() { return mySlot ; }
+
 	const char *getStateStr( TH_STATE State );
 	const char *getErrorStr( TH_ERROR Error );
 	const char *getSpeedStepStr( TH_SPEED_STEPS speedStep );
