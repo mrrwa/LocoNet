@@ -20,6 +20,7 @@ notifySwitchRequest	KEYWORD2
 notifySwitchReport	KEYWORD2
 notifySwitchOutputsReport	KEYWORD2
 notifySwitchState	KEYWORD2
+notifyLongAck	KEYWORD2
 
 initLnBuf	KEYWORD2
 recvLnMsg	KEYWORD2
