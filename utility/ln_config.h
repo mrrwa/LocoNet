@@ -132,7 +132,7 @@
 #define LN_SB_INT_STATUS_BIT  ICF1
 
 // Added support for the Tiny84x
-#if defined (AVR_ATtiny84) || defined (AVR_ATtiny84A) || defined (AVR_ATtiny841)
+#if defined (__AVR_ATtiny84__) || defined (__AVR_ATtiny84A__) || defined (__AVR_ATtiny841__)
 #define LN_TMR_SIGNAL TIM1_COMPA_vect
 #else
 #define LN_TMR_SIGNAL TIMER1_COMPA_vect
