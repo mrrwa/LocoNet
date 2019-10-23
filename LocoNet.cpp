@@ -1762,7 +1762,7 @@ uint8_t LocoNetCVClass::processLNCVMessage(lnMsg * LnPacket) {
 	switch (LnPacket->sr.command) {
 	case OPC_IMM_PACKET:
 	case OPC_PEER_XFER:
-		// Serial.println("Possibly a LNCV message.");
+		DEBUG.println("Possibly a LNCV message.");
 		// Either of these message types may be a LNCV message
 		// Sanity check: Message length, Verify addresses
 		if (LnPacket->ub.mesg_size == 15 && LnPacket->ub.DSTL == LNCV_MODULE_DSTL && LnPacket->ub.DSTH == LNCV_MODULE_DSTH) {
@@ -1837,7 +1837,9 @@ uint8_t LocoNetCVClass::processLNCVMessage(lnMsg * LnPacket) {
 								DEBUG(LnPacket->ub.payload.data.lncvValue);
 								DEBUG("\n");
 								makeLNCVresponse(response.ub, LnPacket->ub.SRC, LnPacket->ub.payload.data.deviceClass, 0x00, LnPacket->ub.payload.data.lncvValue, 0x80);
-								// delay(10); // for whatever reason, we need to delay, otherwise the message will not be sent.
+#if defined(ARDUINO)
+								delay(10); // for whatever reason, we need to delay, otherwise the message will not be sent.
+#endif
 								#ifdef DEBUG_OUTPUT
 								printPacket((lnMsg*)&response);
 								#endif
