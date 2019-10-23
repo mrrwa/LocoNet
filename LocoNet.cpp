@@ -1762,7 +1762,7 @@ uint8_t LocoNetCVClass::processLNCVMessage(lnMsg * LnPacket) {
 	switch (LnPacket->sr.command) {
 	case OPC_IMM_PACKET:
 	case OPC_PEER_XFER:
-		DEBUG.println("Possibly a LNCV message.");
+		DEBUG("Possibly a LNCV message.");
 		// Either of these message types may be a LNCV message
 		// Sanity check: Message length, Verify addresses
 		if (LnPacket->ub.mesg_size == 15 && LnPacket->ub.DSTL == LNCV_MODULE_DSTL && LnPacket->ub.DSTH == LNCV_MODULE_DSTH) {
