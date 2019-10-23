@@ -88,11 +88,6 @@ LocoNetClass::LocoNetClass()
 {
 }
 
-void LocoNetClass::init(void)
-{
-  init(6); // By default use pin 6 as the Tx pin to be compatible with the previous library default 
-}
-
 const char* LocoNetClass::getStatusStr(LN_STATUS Status)
 {
   if((Status >= LN_CD_BACKOFF) && (Status <= LN_RETRY_ERROR))
@@ -101,6 +96,12 @@ const char* LocoNetClass::getStatusStr(LN_STATUS Status)
   return "Invalid Status";
 }
 
+#if defined(ARDUINO)
+
+void LocoNetClass::init(void)
+{
+  init(6); // By default use pin 6 as the Tx pin to be compatible with the previous library default 
+}
 
 void LocoNetClass::init(uint8_t txPin)
 {
@@ -109,6 +110,15 @@ void LocoNetClass::init(uint8_t txPin)
   initLocoNetHardware(&LnBuffer);
 }
 
+#else
+void LocoNetClass::init(volatile uint8_t* txPort, uint8_t txPin) {
+  initLnBuf(&LnBuffer);
+  setTxPortAndPin(txPort, txPin);
+  initLocoNetHardware(&LnBuffer);
+}
+#endif
+
+#if defined(ARDUINO)
 void LocoNetClass::setTxPin(uint8_t txPin)
 {
   pinMode(txPin, OUTPUT);
@@ -126,9 +136,10 @@ void LocoNetClass::setTxPin(uint8_t txPin)
 	
   setTxPortAndPin(out, bitNum);
 }
+#endif
 
 // Check to see if any messages is ready to receive()?
-boolean LocoNetClass::available(void)
+bool LocoNetClass::available(void)
 {
   return lnPacketReady(&LnBuffer);
 }
@@ -1751,7 +1762,7 @@ uint8_t LocoNetCVClass::processLNCVMessage(lnMsg * LnPacket) {
 	switch (LnPacket->sr.command) {
 	case OPC_IMM_PACKET:
 	case OPC_PEER_XFER:
-		Serial.println("Possibly a LNCV message.");
+		// Serial.println("Possibly a LNCV message.");
 		// Either of these message types may be a LNCV message
 		// Sanity check: Message length, Verify addresses
 		if (LnPacket->ub.mesg_size == 15 && LnPacket->ub.DSTL == LNCV_MODULE_DSTL && LnPacket->ub.DSTH == LNCV_MODULE_DSTH) {
@@ -1826,7 +1837,7 @@ uint8_t LocoNetCVClass::processLNCVMessage(lnMsg * LnPacket) {
 								DEBUG(LnPacket->ub.payload.data.lncvValue);
 								DEBUG("\n");
 								makeLNCVresponse(response.ub, LnPacket->ub.SRC, LnPacket->ub.payload.data.deviceClass, 0x00, LnPacket->ub.payload.data.lncvValue, 0x80);
-								delay(10); // for whatever reason, we need to delay, otherwise the message will not be sent.
+								// delay(10); // for whatever reason, we need to delay, otherwise the message will not be sent.
 								#ifdef DEBUG_OUTPUT
 								printPacket((lnMsg*)&response);
 								#endif

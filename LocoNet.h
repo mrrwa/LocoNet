@@ -69,7 +69,9 @@
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
 #else
-#include "WProgram.h"
+#define byte uint8_t
+#define word uint16_t
+#include <inttypes.h>
 #endif
 
 #include "utility/ln_buf.h"
@@ -120,13 +122,18 @@ class LocoNetClass
 {
   private:
     LnBuf   LnBuffer ;
+#if defined(ARDUINO)
 	void 		setTxPin(uint8_t txPin);
-
+#endif
   public:
     LocoNetClass();
+#if defined(ARDUINO)
     void        init(void);
     void        init(uint8_t txPin);
-    boolean 		available(void);
+#else
+	void		init(volatile uint8_t *txPort, uint8_t txPin);
+#endif
+    bool		available(void);
     uint8_t			length(void);
     lnMsg*      receive(void);
     LN_STATUS   send(lnMsg *TxPacket);
