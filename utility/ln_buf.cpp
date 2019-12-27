@@ -127,7 +127,7 @@ lnMsg *recvLnMsg( LnBuf *Buffer )
         // Take a copy of the WriteIndex for later when we move the data
         lastWriteIndex = Buffer->WriteIndex ;
 
-        if( Buffer->WriteIndex > Buffer->ReadIndex )
+        if( Buffer->WriteIndex > Buffer->ReadPacketIndex )
           Buffer->WriteIndex = Buffer->WriteIndex - Buffer->ReadPacketIndex ;
         else
           Buffer->WriteIndex = Buffer->WriteIndex + tempSize ;
@@ -137,7 +137,7 @@ lnMsg *recvLnMsg( LnBuf *Buffer )
 
         // First check if we have to move new data at the buginning of
         // the buffer to make room for the data at the end of the buffer
-        if( lastWriteIndex < Buffer->ReadIndex )
+        if( lastWriteIndex < Buffer->ReadPacketIndex )
         {
           memmove( Buffer->Buf + tempSize, Buffer->Buf, lastWriteIndex ) ;
 
