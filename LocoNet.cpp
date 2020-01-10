@@ -477,7 +477,8 @@ uint8_t LocoNetClass::processSwitchSensorMessage( lnMsg *LnPacket )
     if( LnPacket->lack.opcode == (OPC_SW_STATE & 0x7F ) )
     {
       Direction = LnPacket->lack.ack1 & 0x01 ;
-      notifyLongAck(LnPacket->data[1], LnPacket->data[2]);    
+      if(notifyLongAck)
+	      notifyLongAck(LnPacket->data[1], LnPacket->data[2]);    
     }
     else
       ConsumedFlag = 0 ;
