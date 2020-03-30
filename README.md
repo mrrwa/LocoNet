@@ -25,6 +25,11 @@ It's known to work with:
 - Leonardo, LeoStick, Arduino Pro Micro (ATmega32U4)
 - Various AVRTiny Boards (ATTiny84, ATTiny84A, ATTiny841)
 
+As of 2020-03-28 - Hans Tanner added the capability to change the polarity
+of the Rx and Tx electrical signal (depending on your circuitry) in the utility/ln_config.h file.
+The is controlled using the two #defines LN_SW_UART_RX_INVERTED and LN_SW_UART_TX_INVERTED  
+
+
 **IMPORTANT**
 
 Some of the message formats used in this code are Copyright Digitrax,

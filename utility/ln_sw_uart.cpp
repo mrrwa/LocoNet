@@ -123,7 +123,11 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
   if( lnState == LN_ST_RX ) {  // Are we in RX mode
     if( lnBitCount < 9)  {   // Are we in the Stop Bits phase
       lnCurrentByte >>= 1;
+#ifdef LN_SW_UART_RX_INVERTED  
+      if( bit_is_clear(LN_RX_PORT, LN_RX_BIT)) {
+#else		
       if( bit_is_set(LN_RX_PORT, LN_RX_BIT)) {
+#endif
         lnCurrentByte |= 0x80;
       }
       return ;
@@ -135,7 +139,11 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
     sbi( LN_SB_INT_ENABLE_REG, LN_SB_INT_ENABLE_BIT ) ;
 
     // If the Stop bit is not Set then we have a Framing Error
+#ifdef LN_SW_UART_RX_INVERTED  
+    if( bit_is_set(LN_RX_PORT,LN_RX_BIT) ) {
+#else
     if( bit_is_clear(LN_RX_PORT,LN_RX_BIT) ) {
+#endif		
       // ERROR_LED_ON();
       lnRxBuffer->Stats.RxErrors++ ;
     } 
@@ -261,6 +269,11 @@ void initLocoNetHardware( LnBuf *RxBuffer )
   sbi( LN_SB_INT_STATUS_REG, LN_SB_INT_STATUS_BIT );
   //Enable StartBit Interrupt
   sbi( LN_SB_INT_ENABLE_REG, LN_SB_INT_ENABLE_BIT );
+  
+  //Set rising edge for StartBit if signal is inverted
+#ifdef LN_SW_UART_RX_INVERTED  
+  sbi(LN_SB_EDGE_CFG_REG, LN_SB_EDGE_BIT);
+#endif
   // Set Timer Clock Source 
   LN_TMR_CONTROL_REG = (LN_TMR_CONTROL_REG & 0xF8) | LN_TMR_PRESCALER;
 }
