@@ -1317,7 +1317,7 @@ void LocoNetFastClockClass::processMessage( lnMsg *LnPacket )
 				
         doNotify( 1 ) ;
 
-		if( fcFlags & FC_FLAG_NOTIFY_FRAC_MINS_TICK )
+		if(notifyFastClockFracMins && fcFlags & FC_FLAG_NOTIFY_FRAC_MINS_TICK )
 		  notifyFastClockFracMins( FC_FRAC_MIN_BASE - ( ( fcSlotData.frac_minsh << 7 ) + fcSlotData.frac_minsl ) );
 
         fcState = FC_ST_READY ;
