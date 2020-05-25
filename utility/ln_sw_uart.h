@@ -45,24 +45,43 @@
 #include <avr/interrupt.h>
 #include <string.h>
 
-#ifndef LN_SW_UART_SET_TX_LOW                               // putting a 1 to the pin to switch on NPN transistor
-#define LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT)  LN_TX_PORT |= (1 << LN_TX_BIT)   // to pull down LN line to drive low level
-#endif
+//added code to distinguish between inverted and non-inverted output 2020-03-28 Hans Tanner
+#ifdef LN_SW_UART_TX_INVERTED 									//normally output is driven via NPN, so it is inverted
+	#ifndef LN_SW_UART_SET_TX_LOW                               // putting a 1 to the pin to switch on NPN transistor
+		#define LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT)  LN_TX_PORT |= (1 << LN_TX_BIT)   // to pull down LN line to drive low level
+	#endif
 
-#ifndef LN_SW_UART_SET_TX_HIGH                              // putting a 0 to the pin to switch off NPN transistor
-#define LN_SW_UART_SET_TX_HIGH(LN_TX_PORT, LN_TX_BIT) LN_TX_PORT &= ~(1 << LN_TX_BIT)   // master pull up will take care of high LN level
+	#ifndef LN_SW_UART_SET_TX_HIGH                              // putting a 0 to the pin to switch off NPN transistor
+		#define LN_SW_UART_SET_TX_HIGH(LN_TX_PORT, LN_TX_BIT) LN_TX_PORT &= ~(1 << LN_TX_BIT)   // master pull up will take care of high LN level
+	#endif
+#else //non-inverted output logic
+	#ifndef LN_SW_UART_SET_TX_LOW                               // putting a 1 to the pin to switch on NPN transistor
+		#define LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT)  LN_TX_PORT &= ~(1 << LN_TX_BIT)   // to pull down LN line to drive low level
+	#endif
+
+	#ifndef LN_SW_UART_SET_TX_HIGH                              // putting a 0 to the pin to switch off NPN transistor
+		#define LN_SW_UART_SET_TX_HIGH(LN_TX_PORT, LN_TX_BIT) LN_TX_PORT |= (1 << LN_TX_BIT)   // master pull up will take care of high LN level
+	#endif
 #endif
 
 // For now we will simply check that TX and RX ARE NOT THE SAME as our circuit
 // requires the TX signal to be INVERTED.  If they are THE SAME then we have a 
 // Collision.  
-// Define LN_SW_UART_TX_NON_INVERTED in your board header if your circuit doesn't
+// Define LN_SW_UART_TX_INVERTED in your board header if your circuit doesn't
 // (for example) use a NPN between TX pin and the Loconet port...
 
-#ifdef LN_SW_UART_TX_NON_INVERTED
-#define IS_LN_COLLISION()	(((LN_TX_PORT >> LN_TX_BIT) & 0x01) != ((LN_RX_PORT >> LN_RX_BIT) & 0x01))
-#else  								// inverted is the normal case, RX same as TX means a collision...
-#define IS_LN_COLLISION()	(((LN_TX_PORT >> LN_TX_BIT) & 0x01) == ((LN_RX_PORT >> LN_RX_BIT) & 0x01))
+#ifdef LN_SW_UART_TX_INVERTED
+	#ifdef LN_SW_UART_RX_INVERTED
+		#define IS_LN_COLLISION()	(((LN_TX_PORT >> LN_TX_BIT) & 0x01) != ((LN_RX_PORT >> LN_RX_BIT) & 0x01))
+	#else
+		#define IS_LN_COLLISION()	(((LN_TX_PORT >> LN_TX_BIT) & 0x01) == ((LN_RX_PORT >> LN_RX_BIT) & 0x01))
+	#endif
+#else
+	#ifdef LN_SW_UART_RX_INVERTED
+		#define IS_LN_COLLISION()	(((LN_TX_PORT >> LN_TX_BIT) & 0x01) == ((LN_RX_PORT >> LN_RX_BIT) & 0x01))
+	#else
+		#define IS_LN_COLLISION()	(((LN_TX_PORT >> LN_TX_BIT) & 0x01) != ((LN_RX_PORT >> LN_RX_BIT) & 0x01))
+	#endif
 #endif
 
 

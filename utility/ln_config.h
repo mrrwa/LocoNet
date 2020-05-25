@@ -39,9 +39,20 @@
  * to make it easier to port to other chipsets
  *
  ****************************************************************************
+ * 2020/03/28 - Hans Tanner
+ * added 2 new defines to ln_config.h see lines 70 and 71 below
+ * it is now possible to set the logic of the Rx line as well, which is needed
+ * when using an interface that uses the same (normally inverse) logic on both lines
+ * added registers to support the edge change of the pin interrupt from falling to
+ * rising depending on receiving logic
+ * NOTE: THIS IS ONLY DONE FOR THE ARDUINO UNO SO FAR. NEEDS TO BE ADDED FOR THE DUE
+ * AND THE ATTINY BOARDS IF YOU WANT TO WORK WITH THEM
+ * changed the definition of the SET_TX macros in ln_sw_uart.h line 48 following to use
+ * correct bit levels depending on inverse / non-inverse transmit. 
  */
 
-// jmp
+
+// John Plocher
 // figure out what board we are building for
 // TODO:  Add support for Leo and others...
 #ifdef PINL	//      For the Mega 2560 (should work with 1280, etc)
@@ -58,7 +69,16 @@
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
 
-#undef  LN_SW_UART_TX_NON_INVERTED  // Normal is to be inverted...
+// Uncomment the #define LN_SW_UART_TX_INVERTED below to Invert the polarity of the RX Signal
+// Can be used with an interface with Serialport like behavior, Rx and Tx need to use the same logic level
+// With the commonly used DIY LocoNet circuitry, its Not Normal to invert the RX Signal
+//#define LN_SW_UART_RX_INVERTED
+
+// Uncomment the #define LN_SW_UART_TX_INVERTED below to Invert the polarity of the TX Signal
+// This is typically done where the output signal pin is connected to a NPN Transistor to pull-down the LocoNet
+// which is commonly used in DIY circuit designs, so its normal to be Inverted 
+#define LN_SW_UART_TX_INVERTED
+
 #define LN_BIT_PERIOD               (F_CPU / 16666)
 #define LN_TMR_PRESCALER              1
 #define LN_TIMER_TX_RELOAD_ADJUST   106 //  14,4 us delay borrowed from FREDI sysdef.h
@@ -124,12 +144,15 @@
 #endif
 #endif
 
-// From sysdef.h:
+// From sysdef.h: this for Arduino Nano
 #define LN_SB_SIGNAL          TIMER1_CAPT_vect
-#define LN_SB_INT_ENABLE_REG  TIMSK1
-#define LN_SB_INT_ENABLE_BIT  ICIE1
-#define LN_SB_INT_STATUS_REG  TIFR1
-#define LN_SB_INT_STATUS_BIT  ICF1
+
+#define LN_SB_INT_ENABLE_REG  TIMSK1 //Timer/Counter1 Interrupt Mask Register
+#define LN_SB_INT_ENABLE_BIT  ICIE1  //Timer/Counter1, Input Capture Interrupt Enable
+#define LN_SB_INT_STATUS_REG  TIFR1  //Timer/Counter1 Interrupt Flag Register
+#define LN_SB_INT_STATUS_BIT  ICF1   // Timer/Counter1, Input Capture Flag
+#define LN_SB_EDGE_CFG_REG	  TCCR1B // Timer/Counter1 Control Register B	
+#define LN_SB_EDGE_BIT		  ICES1  // Input Capture Edge Select	
 
 // Added support for the Tiny84x
 #if defined (__AVR_ATtiny84__) || defined (__AVR_ATtiny84A__) || defined (__AVR_ATtiny841__)
