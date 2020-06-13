@@ -382,6 +382,7 @@ class LocoNetSystemVariableClass
   uint8_t DeferredProcessingRequired ;
   uint8_t DeferredSrcAddr ;
     
+  public:
 	/** Checks whether the given Offset is a valid value.
 	 *
 	 * Returns:
@@ -415,7 +416,6 @@ class LocoNetSystemVariableClass
 	 */
     bool CheckAddressRange(uint16_t startAddress, uint8_t Count);
 
-  public:
 	void init(uint8_t newMfgId, uint8_t newDevId, uint16_t newProductId, uint8_t newSwVersion);
 	
 	/**
