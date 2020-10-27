@@ -55,11 +55,12 @@
 // John Plocher
 // figure out what board we are building for
 // TODO:  Add support for Leo and others...
-#ifdef PINL	//      For the Mega 2560 (should work with 1280, etc)
-#define _LNET_USE_MEGA
-#else		//	For the UNO:
-#define _LNET_USE_UNO
-#endif
+#ifndef ESP8266
+#  ifdef PINL	//      For the Mega 2560 (should work with 1280, etc)
+#    define _LNET_USE_MEGA
+#  else		//	For the UNO:
+#    define _LNET_USE_UNO
+#  endif
 
 // Common defines
 #ifndef cbi
@@ -68,8 +69,10 @@
 #ifndef sbi
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
+#endif
 
-// Uncomment the #define LN_SW_UART_TX_INVERTED below to Invert the polarity of the RX Signal
+
+// Uncomment the #define LN_SW_UART_RX_INVERTED below to Invert the polarity of the RX Signal
 // Can be used with an interface with Serialport like behavior, Rx and Tx need to use the same logic level
 // With the commonly used DIY LocoNet circuitry, its Not Normal to invert the RX Signal
 //#define LN_SW_UART_RX_INVERTED
@@ -79,10 +82,15 @@
 // which is commonly used in DIY circuit designs, so its normal to be Inverted 
 #define LN_SW_UART_TX_INVERTED
 
-#define LN_BIT_PERIOD               (F_CPU / 16666)
-#define LN_TMR_PRESCALER              1
-#define LN_TIMER_TX_RELOAD_ADJUST   106 //  14,4 us delay borrowed from FREDI sysdef.h
+#ifdef ESP8266
+#  define LN_BIT_PERIOD               ((F_CPU / 16) / 16666)
+#else
+#  define LN_BIT_PERIOD               (F_CPU / 16666)
+#  define LN_TMR_PRESCALER              1
+#  define LN_TIMER_TX_RELOAD_ADJUST   106 //  14,4 us delay borrowed from FREDI sysdef.h
+#endif
 #define LN_TX_RETRIES_MAX            25
+
 
 
 // *****************************************************************************
@@ -175,6 +183,19 @@
 // *                                                       Arduino --UNKNOWN-- *
 // *****************************************************************************
 #else
+#ifdef ESP8266
+
+// Read from pin D6 on ESP8266 devices
+#ifndef LN_RX_PORT
+#define LN_RX_PORT D6
+#endif
+#define LN_RX_DDR  
+#define LN_RX_BIT
+
+#define bit_is_set(sfr, bit)   (digitalRead(sfr) == HIGH)
+#define bit_is_clear(sfr, bit) (digitalRead(sfr) == LOW)
+
+#else
 #error "No Arduino Board/Processor selected"
 
 #define LN_SB_INT_ENABLE_REG  TIMSK
@@ -184,6 +205,7 @@
 #define LN_TMR_INT_ENABLE_REG TIMSK
 #define LN_TMR_INT_STATUS_REG TIFR
 
+#endif  // ESP8266
 #endif	// board type
 #endif	// include file
 

@@ -56,9 +56,11 @@
  *****************************************************************************/
 
 #include <string.h>
-#include <avr/interrupt.h>
-//#include "loconet.h"
-//#include "ln_interface.h"
+#ifndef ESP8266
+#  include <avr/interrupt.h>
+#else
+#  include <Arduino.h>
+#endif
 #include "ln_buf.h"
 
 #define		LN_BUF_OPC_WRAP_AROUND	(uint8_t)0x00		// Special character to indcate a buffer wrap
