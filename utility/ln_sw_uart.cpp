@@ -90,6 +90,7 @@ void setTxPortAndPin(volatile uint8_t *newTxPort, uint8_t newTxPin)
   txPin = newTxPin;
 }
 
+#ifdef ESP8266
 bool ICACHE_RAM_ATTR isLocoNetCollision() 
 {
 	pinMode(LN_TX_PORT, INPUT);
@@ -110,6 +111,7 @@ bool ICACHE_RAM_ATTR isLocoNetCollision()
 
 	return result;
 }
+#endif
 
 /**************************************************************************
  *
@@ -446,15 +448,13 @@ LN_STATUS sendLocoNetPacketTry(lnMsg *TxData, unsigned char ucPrioDelay)
   cli() ;
 
 #if defined(ESP8266)
+  // Before we do anything else - Disable StartBit Interrupt
   detachInterrupt(digitalPinToInterrupt(LN_RX_PORT));
-  if (IS_LN_COLLISION()) {
-  /*
   #ifdef LN_SW_UART_RX_INVERTED  
   if( bit_is_set(LN_RX_PORT,LN_RX_BIT) ) {
   #else
   if( bit_is_clear(LN_RX_PORT,LN_RX_BIT) ) {
   #endif
-  */
 #else
   // Before we do anything else - Disable StartBit Interrupt
   cbi( LN_SB_INT_ENABLE_REG, LN_SB_INT_ENABLE_BIT ) ;

@@ -1690,7 +1690,7 @@ SV_STATUS LocoNetSystemVariableClass::doDeferredProcessing( void )
 
     /* Note that this operation intentionally uses a "make one attempt to
        send to LocoNet" method here */
-    if( LocoNet.send( &msg, LN_BACKOFF_INITIAL + ( unData.stDecoded.unSerialNumber.b.lo % (byte) 10 ) ) != LN_DONE )
+    if( sendLocoNetPacketTry( &msg, LN_BACKOFF_INITIAL + ( unData.stDecoded.unSerialNumber.b.lo % (byte) 10 ) ) != LN_DONE )
       return SV_DEFERRED_PROCESSING_NEEDED ;
 
     DeferredProcessingRequired = 0 ;
