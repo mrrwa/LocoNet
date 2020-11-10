@@ -54,7 +54,7 @@
 #ifdef LN_SW_UART_TX_INVERTED 									//normally output is driven via NPN, so it is inverted
 	#ifndef LN_SW_UART_SET_TX_LOW                               // putting a 1 to the pin to switch on NPN transistor
 		#ifdef ESP8266
-			#define LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT) digitalWrite(LN_TX_PORT, HIGH)    // to pull down LN line to drive low level
+			#define LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT) lnLastTxBit = HIGH; digitalWrite(LN_TX_PORT, HIGH)    // to pull down LN line to drive low level
 		#else
 			#define LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT) LN_TX_PORT |= (1 << LN_TX_BIT)    // to pull down LN line to drive low level
 		#endif
@@ -62,7 +62,7 @@
 
 	#ifndef LN_SW_UART_SET_TX_HIGH                              // putting a 0 to the pin to switch off NPN transistor
 		#ifdef ESP8266
-			#define LN_SW_UART_SET_TX_HIGH(LN_TX_PORT, LN_TX_BIT) digitalWrite(LN_TX_PORT, LOW)    // master pull up will take care of high LN level
+			#define LN_SW_UART_SET_TX_HIGH(LN_TX_PORT, LN_TX_BIT) lnLastTxBit = LOW; digitalWrite(LN_TX_PORT, LOW)    // master pull up will take care of high LN level
 		#else
 			#define LN_SW_UART_SET_TX_HIGH(LN_TX_PORT, LN_TX_BIT) LN_TX_PORT &= ~(1 << LN_TX_BIT)  // master pull up will take care of high LN level
 		#endif
@@ -70,7 +70,7 @@
 #else //non-inverted output logic
 	#ifndef LN_SW_UART_SET_TX_LOW    
 		#ifdef ESP8266
-			#define LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT) digitalWrite(LN_TX_PORT, LOW)     // to pull down LN line to drive low level
+			#define LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT) lnLastTxBit = LOW; digitalWrite(LN_TX_PORT, LOW)     // to pull down LN line to drive low level
 		#else                           
 			#define LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT) LN_TX_PORT &= ~(1 << LN_TX_BIT)   // to pull down LN line to drive low level
 		#endif
@@ -78,7 +78,7 @@
 
 	#ifndef LN_SW_UART_SET_TX_HIGH 
 		#ifdef ESP8266
-			#define LN_SW_UART_SET_TX_HIGH(LN_TX_PORT, LN_TX_BIT) digitalWrite(LN_TX_PORT, HIGH)   // master pull up will take care of high LN level
+			#define LN_SW_UART_SET_TX_HIGH(LN_TX_PORT, LN_TX_BIT) lnLastTxBit = HIGH; digitalWrite(LN_TX_PORT, HIGH)   // master pull up will take care of high LN level
 		#else                             
 			#define LN_SW_UART_SET_TX_HIGH(LN_TX_PORT, LN_TX_BIT) LN_TX_PORT |= (1 << LN_TX_BIT)   // master pull up will take care of high LN level
 		#endif

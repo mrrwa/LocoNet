@@ -65,6 +65,9 @@ volatile lnMsg    * volatile lnTxData ;
 volatile uint8_t  lnTxIndex ;
 volatile uint8_t  lnTxLength ;
 volatile uint8_t  lnTxSuccess ;   // this boolean flag as a message from timer interrupt to send function
+#ifdef ESP8266
+volatile uint8_t  lnLastTxBit;
+#endif
 
 #ifndef ESP8266
 volatile uint8_t  *txPort;
@@ -93,21 +96,19 @@ void setTxPortAndPin(volatile uint8_t *newTxPort, uint8_t newTxPin)
 #ifdef ESP8266
 bool ICACHE_RAM_ATTR isLocoNetCollision() 
 {
-	pinMode(LN_TX_PORT, INPUT);
 #ifdef LN_SW_UART_TX_INVERTED
 	#ifdef LN_SW_UART_RX_INVERTED
-	bool result = (digitalRead(LN_TX_PORT) != digitalRead(LN_RX_PORT));
+	bool result = (lnLastTxBit != digitalRead(LN_RX_PORT));
 	#else
-	bool result = (digitalRead(LN_TX_PORT) == digitalRead(LN_RX_PORT));
+	bool result = (lnLastTxBit == digitalRead(LN_RX_PORT));
 	#endif
 #else
 	#ifdef LN_SW_UART_RX_INVERTED
-	bool result = (digitalRead(LN_TX_PORT) == digitalRead(LN_RX_PORT));
+	bool result = (lnLastTxBit == digitalRead(LN_RX_PORT));
 	#else
-	bool result = (digitalRead(LN_TX_PORT) != digitalRead(LN_RX_PORT));
+	bool result = (lnLastTxBit != digitalRead(LN_RX_PORT));
 	#endif
 #endif
-	pinMode(LN_TX_PORT, OUTPUT);
 
 	return result;
 }
@@ -337,7 +338,7 @@ void initLocoNetHardware( LnBuf *RxBuffer )
 
   // Set the RX line to Input
 #if defined(ESP8266)
-  pinMode(LN_RX_PORT, INPUT_PULLUP);
+  pinMode(LN_RX_PORT, INPUT);
 #else
   cbi( LN_RX_DDR, LN_RX_BIT ) ;
 #endif

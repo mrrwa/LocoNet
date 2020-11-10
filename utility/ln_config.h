@@ -84,6 +84,7 @@
 
 #ifdef ESP8266
 #  define LN_BIT_PERIOD               ((F_CPU / 16) / 16666)
+#  define LN_TIMER_TX_RELOAD_ADJUST   60
 #else
 #  define LN_BIT_PERIOD               (F_CPU / 16666)
 #  define LN_TMR_PRESCALER              1
