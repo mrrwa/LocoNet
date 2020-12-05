@@ -41,8 +41,13 @@
 #ifndef _LN_SW_UART_INCLUDED
 #define _LN_SW_UART_INCLUDED
 
+#if defined(STM32F1)
+
+#else
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#endif
+
 #include <string.h>
 
 //added code to distinguish between inverted and non-inverted output 2020-03-28 Hans Tanner
@@ -64,12 +69,43 @@
 	#endif
 #endif
 
+#if defined(STM32F1)
+//Clear StartBit Interrupt flag
+#define LN_CLEAR_START_BIT_FLAG() (exti_reset_request(EXTI14))
+//Enable StartBit Interrupt
+#define LN_ENABLE_START_BIT_INTERRUPT() (exti_enable_request(EXTI14))
+//Disable StartBit Interrupt
+#define LN_DISABLE_START_BIT_INTERRUPT() (exti_disable_request(EXTI14))
+
+// Clear Timer Interrupt Flag
+#define LN_CLEAR_TIMER_FLAG() (timer_clear_flag(TIM2, TIM_SR_CC1IF))
+
+// Enable Timer Compare Interrupt
+#define LN_ENABLE_TIMER_INTERRUPT() (timer_enable_irq(TIM2, TIM_DIER_CC1IE))
+// Disable Timer Compare Interrupt
+#define LN_DISABLE_TIMER_INTERRUPT() (timer_disable_irq(TIM2, TIM_DIER_CC1IE))
+#else
+//Clear StartBit Interrupt flag
+#define LN_CLEAR_START_BIT_FLAG() (sbi( LN_SB_INT_STATUS_REG, LN_SB_INT_STATUS_BIT ))
+//Enable StartBit Interrupt
+#define LN_ENABLE_START_BIT_INTERRUPT() (sbi( LN_SB_INT_ENABLE_REG, LN_SB_INT_ENABLE_BIT ))
+//Disable StartBit Interrupt
+#define LN_DISABLE_START_BIT_INTERRUPT() (cbi( LN_SB_INT_ENABLE_REG, LN_SB_INT_ENABLE_BIT ))
+
+// Clear Timer Interrupt Flag
+#define LN_CLEAR_TIMER_FLAG() (sbi(LN_TMR_INT_STATUS_REG, LN_TMR_INT_STATUS_BIT))
+
+// Enable Timer Compare Interrupt
+#define LN_ENABLE_TIMER_INTERRUPT() (sbi(LN_TMR_INT_ENABLE_REG, LN_TMR_INT_ENABLE_BIT))
+// Disable Timer Compare Interrupt
+#define LN_DISABLE_TIMER_INTERRUPT() (cbi( LN_TMR_INT_ENABLE_REG, LN_TMR_INT_ENABLE_BIT ))
+#endif
+
 // For now we will simply check that TX and RX ARE NOT THE SAME as our circuit
 // requires the TX signal to be INVERTED.  If they are THE SAME then we have a 
 // Collision.  
 // Define LN_SW_UART_TX_INVERTED in your board header if your circuit doesn't
 // (for example) use a NPN between TX pin and the Loconet port...
-
 #ifdef LN_SW_UART_TX_INVERTED
 	#ifdef LN_SW_UART_RX_INVERTED
 		#define IS_LN_COLLISION()	(((LN_TX_PORT >> LN_TX_BIT) & 0x01) != ((LN_RX_PORT >> LN_RX_BIT) & 0x01))
@@ -83,6 +119,7 @@
 		#define IS_LN_COLLISION()	(((LN_TX_PORT >> LN_TX_BIT) & 0x01) != ((LN_RX_PORT >> LN_RX_BIT) & 0x01))
 	#endif
 #endif
+
 
 
 #define LN_ST_IDLE            0   // net is free for anyone to start transmission
@@ -118,7 +155,7 @@
 // ATTENTION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 void initLocoNetHardware( LnBuf *RxBuffer );
-void setTxPortAndPin(volatile uint8_t *newTxPort, uint8_t newTxPin);
+void setTxPortAndPin(LnPortAddrType newTxPort, uint8_t newTxPin);
 LN_STATUS sendLocoNetPacketTry(lnMsg *TxData, unsigned char ucPrioDelay);
 
 #endif

@@ -3,7 +3,7 @@
 
 /****************************************************************************
  * 	Copyright (C) 2009 to 2013 Alex Shepherd
- * 	Copyright (C) 2013 Damian Philipp
+ * 	Copyright (C) 2020 Damian Philipp
  * 
  * 	Portions Copyright (C) Digitrax Inc.
  * 	Portions Copyright (C) Uhlenbrock Elektronik GmbH
@@ -329,6 +329,9 @@ class LocoNetFastClockClass
 /************************************************************************************
     SV (System Variable Handling
 ************************************************************************************/
+#if defined(STM32F1)
+// STM31F1 has no flash.
+#else
 
 typedef enum
 {
@@ -477,6 +480,8 @@ class LocoNetSystemVariableClass
 	 */
     SV_STATUS doDeferredProcessing( void );
 };
+
+#endif // STM32F1
 
 class LocoNetCVClass
 {

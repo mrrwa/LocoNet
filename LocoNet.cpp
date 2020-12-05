@@ -1,6 +1,6 @@
 /****************************************************************************
  * 	Copyright (C) 2009..2013 Alex Shepherd
- *	Copyright (C) 2013 Damian Philipp
+ *	Copyright (C) 2020 Damian Philipp
  * 
  * 	Portions Copyright (C) Digitrax Inc.
  *	Portions Copyright (C) Uhlenbrock Elektronik GmbH
@@ -71,8 +71,15 @@
 #include "ln_config.h"
 #include "utils.h"
 
+#if defined(STM32F1)
+#include <FreeRTOS.h>
+#include <task.h>
+#include <libopencm3/stm32/gpio.h>
+#include <cstdint>
+#else
 #include <avr/eeprom.h>
 #include <avr/wdt.h>
+#endif
 
 const char * LoconetStatusStrings[] = {
 	"CD Backoff",
@@ -111,19 +118,27 @@ void LocoNetClass::init(uint8_t txPin)
 
 void LocoNetClass::setTxPin(uint8_t txPin)
 {
+//#if defined(STM32F1) && !defined(__ARDUINO__)
+{
+//  uint16_t bitNum = 15;
+//  gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, (1 << bitNum));  // LN TX
+//  LnPortRegisterType out = GPIOB; // TODO: This shold be configurable..
+}
+//#else
   pinMode(txPin, OUTPUT);
+  //gpio_set(GPIOB, GPIO15);
   
 	// Not figure out which Port bit is the Tx Bit from the Arduino pin number
-  uint8_t bitMask = digitalPinToBitMask(txPin);
-  uint8_t bitMaskTest = 0x01;
-  uint8_t bitNum = 0;
+  LnPortRegisterType bitMask = digitalPinToBitMask(txPin);
+  LnPortRegisterType bitMaskTest = 0x01;
+  LnPortRegisterType bitNum = 0;
   
-  uint8_t port = digitalPinToPort(txPin);
-  volatile uint8_t *out = portOutputRegister(port);
+  LnPortRegisterType port = digitalPinToPort(txPin);
+  LnPortAddrType out = portOutputRegister(port);
   
   while(bitMask != bitMaskTest)
 	bitMaskTest = 1 << ++bitNum;
-	
+//#endif
   setTxPortAndPin(out, bitNum);
 }
 
@@ -513,8 +528,8 @@ LN_STATUS LocoNetClass::reportSwitch( uint16_t Address )
 
 LN_STATUS LocoNetClass::reportSensor( uint16_t Address, uint8_t State )
 {
-	byte AddrH = ( (--Address >> 8) & 0x0F ) | OPC_INPUT_REP_CB ;
-	byte AddrL = ( Address >> 1 ) & 0x7F ;
+	uint8_t AddrH = ( (--Address >> 8) & 0x0F ) | OPC_INPUT_REP_CB ;
+	uint8_t AddrL = ( Address >> 1 ) & 0x7F ;
 	if( Address % 2)
 		AddrH |= OPC_INPUT_REP_SW ;
 
@@ -1386,6 +1401,10 @@ void LocoNetFastClockClass::process66msActions(void)
   }
 }
 
+#if defined(STM32F1)
+// STM31F1 has no EEPROM.
+#else
+
 void LocoNetSystemVariableClass::init(uint8_t newMfgId, uint8_t newDevId, uint16_t newProductId, uint8_t newSwVersion)
 {
   DeferredProcessingRequired = 0;
@@ -1671,6 +1690,9 @@ SV_STATUS LocoNetSystemVariableClass::doDeferredProcessing( void )
 
   return SV_OK ;
 }
+
+#endif // STM32F1
+
 
  /*****************************************************************************
  *	DESCRIPTION
