@@ -128,7 +128,7 @@ void LocoNetClass::setTxPin(uint8_t txPin)
 }
 
 // Check to see if any messages is ready to receive()?
-boolean LocoNetClass::available(void)
+bool LocoNetClass::available(void)
 {
   return lnPacketReady(&LnBuffer);
 }
@@ -1231,7 +1231,7 @@ TH_SPEED_STEPS LocoNetThrottleClass::getSpeedSteps(void)
   return mySpeedSteps;
 }
 
-TH_ERROR LocoNetThrottleClass::setSpeedSteps(TH_SPEED_STEPS newSpeedSteps)
+void LocoNetThrottleClass::setSpeedSteps(TH_SPEED_STEPS newSpeedSteps)
 {
   mySpeedSteps = newSpeedSteps;
   if((myState == TH_ST_IN_USE) && ((myStatus1 & 0x07) != mySpeedSteps))

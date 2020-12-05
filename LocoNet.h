@@ -126,7 +126,7 @@ class LocoNetClass
     LocoNetClass();
     void        init(void);
     void        init(uint8_t txPin);
-    boolean 		available(void);
+    bool 		available(void);
     uint8_t			length(void);
     lnMsg*      receive(void);
     LN_STATUS   send(lnMsg *TxPacket);
@@ -244,7 +244,7 @@ class LocoNetThrottleClass
 	TH_ERROR setFunc5to8Direct(uint8_t Value) ;
 	
 	TH_SPEED_STEPS getSpeedSteps(void);
-	TH_ERROR setSpeedSteps(TH_SPEED_STEPS newSpeedSteps);
+	void setSpeedSteps(TH_SPEED_STEPS newSpeedSteps);
 
 	TH_STATE getState(void) ;
 	uint8_t getSlot() { return mySlot ; }
