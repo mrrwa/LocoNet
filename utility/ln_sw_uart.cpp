@@ -237,7 +237,9 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
       lnTxSuccess = 1 ;
 
       // Now copy the TX Packet into the RX Buffer
+#if (defined(LN_TX_ECHO) && (LN_TX_ECHO) != 0)
       addMsgLnBuf( lnRxBuffer, lnTxData );
+#endif
 
       // Begin CD Backoff state
       lnBitCount = 0 ;

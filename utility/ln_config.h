@@ -94,6 +94,12 @@ typedef volatile LnPortRegisterType* LnPortAddrType;
 // which is commonly used in DIY circuit designs, so its normal to be Inverted 
 #define LN_SW_UART_TX_INVERTED
 
+// Set LN_TX_ECHO to receive a copy of every transmitted message using LocoNet.receive()
+// Or set to 0 to suppress echos. Wrapped in #ifndef so it can be set on a per-build basis.
+#ifndef LN_TX_ECHO
+#define LN_TX_ECHO 1
+#endif
+
 #if defined(STM32F1)
 #define LN_BIT_PERIOD               (rcc_apb1_frequency * 2 / 16666)
 #else
