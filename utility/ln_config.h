@@ -205,6 +205,11 @@ typedef volatile LnPortRegisterType* LnPortAddrType;
 #define LN_SB_SIGNAL          exti15_10_isr
 #define LN_TMR_SIGNAL         tim2_isr
 
+// Priority of the timer interrupt in hardware. If an OS is used and OS calls
+// are made from notifyLnByteReceived, this may have to be adjusted to match
+// the OS expectations. See the OS manual for details.
+#define LN_TMR_ISR_PRIO ((configMAX_SYSCALL_INTERRUPT_PRIORITY) + 64)
+
 // *****************************************************************************
 // *                                                       Arduino --UNKNOWN-- *
 // *****************************************************************************

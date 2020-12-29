@@ -510,6 +510,11 @@ class LocoNetCVClass
 	extern "C" {
 #endif
 
+// Notify *from the ISR context* that a byte was received.
+// This is useful to, e.g., wake a task that will checks for new
+// LocoNet messages.
+extern void notifyLnByteReceived() __attribute__ ((weak));
+
 extern void notifySensor( uint16_t Address, uint8_t State ) __attribute__ ((weak));
 
 // Address: Switch Address.

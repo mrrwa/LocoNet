@@ -188,6 +188,9 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
     } 
     else { // Put the received byte in the buffer
       addByteLnBuf( lnRxBuffer, lnCurrentByte ) ;
+      if (notifyLnByteReceived != 0) {
+        notifyLnByteReceived();
+      }
     }
     lnBitCount = 0 ;
     lnState = LN_ST_CD_BACKOFF ;
@@ -239,6 +242,9 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
       // Now copy the TX Packet into the RX Buffer
 #if (defined(LN_TX_ECHO) && (LN_TX_ECHO) != 0)
       addMsgLnBuf( lnRxBuffer, lnTxData );
+      if (notifyLnByteReceived != 0) {
+        notifyLnByteReceived();
+      }
 #endif
 
       // Begin CD Backoff state
@@ -300,6 +306,7 @@ void initLocoNetHardware( LnBuf *RxBuffer )
 	rcc_periph_clock_enable(RCC_TIM2);
 
 	// Enable TIM2 interrupt.
+  nvic_set_priority(NVIC_TIM2_IRQ, LN_TMR_ISR_PRIO);
 	nvic_enable_irq(NVIC_TIM2_IRQ);
 
 	// Reset TIM2 peripheral to defaults.
