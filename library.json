@@ -1,0 +1,10 @@
+{
+    "name": "LocoNet",
+    "version": "1.1.4",
+    "keywords": "AVR, Railroad, LocoNet",
+    "description": "Enables Digitrax LocoNet Communication. This library allows you to interface to a LocoNet network and send/receive LocoNet commands. The library currently supports the AVR ATTiny84 & ATMega88/168/328/32u4 using the 16-Bit Timer1 and ICP1. It also supports the Mega2560 using Timer5 and ICP5. It also supports the STM32F1 using TIM2.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/mrrwa/LocoNet"
+    }
+}

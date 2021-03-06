@@ -3,7 +3,7 @@
 
 /****************************************************************************
  * 	Copyright (C) 2009 to 2013 Alex Shepherd
- * 	Copyright (C) 2013 Damian Philipp
+ * 	Copyright (C) 2020 Damian Philipp
  * 
  * 	Portions Copyright (C) Digitrax Inc.
  * 	Portions Copyright (C) Uhlenbrock Elektronik GmbH
@@ -126,7 +126,7 @@ class LocoNetClass
     LocoNetClass();
     void        init(void);
     void        init(uint8_t txPin);
-    boolean 		available(void);
+    bool 		available(void);
     uint8_t			length(void);
     lnMsg*      receive(void);
     LN_STATUS   send(lnMsg *TxPacket);
@@ -244,7 +244,7 @@ class LocoNetThrottleClass
 	TH_ERROR setFunc5to8Direct(uint8_t Value) ;
 	
 	TH_SPEED_STEPS getSpeedSteps(void);
-	TH_ERROR setSpeedSteps(TH_SPEED_STEPS newSpeedSteps);
+	void setSpeedSteps(TH_SPEED_STEPS newSpeedSteps);
 
 	TH_STATE getState(void) ;
 	uint8_t getSlot() { return mySlot ; }
@@ -329,6 +329,9 @@ class LocoNetFastClockClass
 /************************************************************************************
     SV (System Variable Handling
 ************************************************************************************/
+#if defined(STM32F1)
+// STM31F1 has no flash.
+#else
 
 typedef enum
 {
@@ -477,6 +480,8 @@ class LocoNetSystemVariableClass
 	 */
     SV_STATUS doDeferredProcessing( void );
 };
+
+#endif // STM32F1
 
 class LocoNetCVClass
 {

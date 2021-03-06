@@ -54,6 +54,11 @@
 
 // John Plocher
 // figure out what board we are building for
+
+// Common defines
+#if defined(STM32F1)
+// no cbi/sbi for STM32F1
+#else
 // TODO:  Add support for Leo and others...
 #ifdef PINL	//      For the Mega 2560 (should work with 1280, etc)
 #define _LNET_USE_MEGA
@@ -68,6 +73,16 @@
 #ifndef sbi
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
+#endif // STM31F1
+
+#if defined(STM32F1)
+typedef uint32_t LnPortRegisterType;
+typedef uint32_t LnCompareTargetType;
+#else
+typedef uint8_t LnPortRegisterType;
+typedef uint16_t LnCompareTargetType;
+#endif
+typedef volatile LnPortRegisterType* LnPortAddrType;
 
 // Uncomment the #define LN_SW_UART_TX_INVERTED below to Invert the polarity of the RX Signal
 // Can be used with an interface with Serialport like behavior, Rx and Tx need to use the same logic level
@@ -79,7 +94,11 @@
 // which is commonly used in DIY circuit designs, so its normal to be Inverted 
 #define LN_SW_UART_TX_INVERTED
 
+#if defined(STM32F1)
+#define LN_BIT_PERIOD               (rcc_apb1_frequency * 2 / 16666)
+#else
 #define LN_BIT_PERIOD               (F_CPU / 16666)
+#endif
 #define LN_TMR_PRESCALER              1
 #define LN_TIMER_TX_RELOAD_ADJUST   106 //  14,4 us delay borrowed from FREDI sysdef.h
 #define LN_TX_RETRIES_MAX            25
@@ -170,6 +189,15 @@
 #define LN_TMR_COUNT_REG      TCNT1     // and replaced their occurence in
 #define LN_TMR_CONTROL_REG    TCCR1B    // the code.
 #define LN_INIT_COMPARATOR() { TCCR1A = 0; TCCR1B = 0x01; }    // no prescaler, normal mode
+
+#elif defined(STM32F1)
+
+#define LN_RX_PIN_NAME PB14
+#define LN_RX_PORT  (*portInputRegister(GPIOB))
+#define LN_RX_BIT   (14)
+
+#define LN_SB_SIGNAL          exti15_10_isr
+#define LN_TMR_SIGNAL         tim2_isr
 
 // *****************************************************************************
 // *                                                       Arduino --UNKNOWN-- *
