@@ -5,7 +5,7 @@
  *      Copyright (C) 2001 Ron W. Auld                                       *
  *      Copyright (C) 2004 Alex Shepherd                                                                      *
  *                                                                           *
- *      Portions Copyright (C) Digitrax Inc.                                 * 
+ *      Portions Copyright (C) Digitrax Inc.                                 *
  *                                                                           *
  *                                                                           *
  *  This library is free software; you can redistribute it and/or            *
@@ -125,10 +125,10 @@
 #include <stdint.h>
 
 #if defined (__cplusplus)
-	extern "C" {
+extern "C" {
 #endif
 
-/* various bit masks */
+	/* various bit masks */
 #define DIRF_DIR          0x20  /* direction bit    */
 #define DIRF_F0           0x10  /* Function 0 bit   */
 #define DIRF_F4           0x08  /* Function 1 bit   */
@@ -281,7 +281,7 @@
 /*
  *  programming modes
  */
-/* Paged mode  byte R/W on Service Track */
+ /* Paged mode  byte R/W on Service Track */
 #define PAGED_ON_SRVC_TRK       (PCMD_BYTE_MODE)
 
 /* Direct mode byte R/W on Service Track */
@@ -331,335 +331,335 @@
 #endif
 
 /* Locomotive Address Message */
-typedef struct locoadr_t {
-    uint8_t command;
-    uint8_t adr_hi;        /* ms seven bits of loco address (D6-D0)                */
-    uint8_t adr_lo;        /* ls seven bits of loco address (D6-D0)                */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} locoAdrMsg;
+	typedef struct locoadr_t {
+		uint8_t command;
+		uint8_t adr_hi;        /* ms seven bits of loco address (D6-D0)                */
+		uint8_t adr_lo;        /* ls seven bits of loco address (D6-D0)                */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} locoAdrMsg;
 
-/* Switch with/without Acknowledge */
-typedef struct switchack_t {
-    uint8_t command;
-    uint8_t sw1;           /* ls seven bits of switch address (D6-D0)              */
-    uint8_t sw2;           /* ms four  bits of switch address (D3-D0)              */
-                        /* and control bits                                     */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} switchAckMsg, switchReqMsg;
+	/* Switch with/without Acknowledge */
+	typedef struct switchack_t {
+		uint8_t command;
+		uint8_t sw1;           /* ls seven bits of switch address (D6-D0)              */
+		uint8_t sw2;           /* ms four  bits of switch address (D3-D0)              */
+							/* and control bits                                     */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} switchAckMsg, switchReqMsg;
 
-/* Slot data request */
-typedef struct slotreq_t {
-    uint8_t command;
-    uint8_t slot;          /* slot number for this request                         */
-    uint8_t pad;           /* should be zero                                       */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} slotReqMsg;
+	/* Slot data request */
+	typedef struct slotreq_t {
+		uint8_t command;
+		uint8_t slot;          /* slot number for this request                         */
+		uint8_t pad;           /* should be zero                                       */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} slotReqMsg;
 
-/* Move/Link Slot Message */
-typedef struct slotmove_t {
-    uint8_t command;
-    uint8_t src;           /* source slot number for the move/link                 */
-    uint8_t dest;          /* destination slot for the move/link                   */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} slotMoveMsg, slotLinkMsg;
+	/* Move/Link Slot Message */
+	typedef struct slotmove_t {
+		uint8_t command;
+		uint8_t src;           /* source slot number for the move/link                 */
+		uint8_t dest;          /* destination slot for the move/link                   */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} slotMoveMsg, slotLinkMsg;
 
-/* Consist Function Message */
-typedef struct consistfunc_t {
-    uint8_t command;
-    uint8_t slot;          /* slot number for this request                         */
-    uint8_t dirf;          /* direction and light function bits                    */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} consistFuncMsg;
+	/* Consist Function Message */
+	typedef struct consistfunc_t {
+		uint8_t command;
+		uint8_t slot;          /* slot number for this request                         */
+		uint8_t dirf;          /* direction and light function bits                    */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} consistFuncMsg;
 
-/* Write slot status message */
-typedef struct slotstat_t {
-    uint8_t command;
-    uint8_t slot;          /* slot number for this request                         */
-    uint8_t stat;          /* status to be written                                 */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} slotStatusMsg;
+	/* Write slot status message */
+	typedef struct slotstat_t {
+		uint8_t command;
+		uint8_t slot;          /* slot number for this request                         */
+		uint8_t stat;          /* status to be written                                 */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} slotStatusMsg;
 
-/* Long ACK message */
-typedef struct longack_t{
-    uint8_t command;
-    uint8_t opcode;        /* op-code of message getting the response (msb=0)      */
-    uint8_t ack1;          /* response code                                        */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} longAckMsg;
+	/* Long ACK message */
+	typedef struct longack_t {
+		uint8_t command;
+		uint8_t opcode;        /* op-code of message getting the response (msb=0)      */
+		uint8_t ack1;          /* response code                                        */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} longAckMsg;
 
-/* Sensor input report */
-typedef struct inputrep_t {
-    uint8_t command;
-    uint8_t in1;           /* first  byte of report                                */
-    uint8_t in2;           /* second byte of report                                */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} inputRepMsg;
+	/* Sensor input report */
+	typedef struct inputrep_t {
+		uint8_t command;
+		uint8_t in1;           /* first  byte of report                                */
+		uint8_t in2;           /* second byte of report                                */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} inputRepMsg;
 
-/* Turnout sensor state report */
-typedef struct swrep_t {
-    uint8_t command;
-    uint8_t sn1;           /* first  byte of report                                */
-    uint8_t sn2;           /* second byte of report                                */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} swRepMsg;
+	/* Turnout sensor state report */
+	typedef struct swrep_t {
+		uint8_t command;
+		uint8_t sn1;           /* first  byte of report                                */
+		uint8_t sn2;           /* second byte of report                                */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} swRepMsg;
 
-/* Request Switch function */
-typedef struct swreq_t {
-    uint8_t command;
-    uint8_t sw1;           /* first  byte of request                               */
-    uint8_t sw2;           /* second byte of request                               */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} swReqMsg;
+	/* Request Switch function */
+	typedef struct swreq_t {
+		uint8_t command;
+		uint8_t sw1;           /* first  byte of request                               */
+		uint8_t sw2;           /* second byte of request                               */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} swReqMsg;
 
-/* multi sense transponding */
-typedef struct multisense_transponder_t {
-    uint8_t command;
-    uint8_t type;          /* multi sense type                                     */
-    uint8_t zone;          /* zone and section                                     */
-    uint8_t adr1;          /* ls of address                                        */
-    uint8_t adr2;          /* ms of address                                        */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} multiSenseTranspMsg;
+	/* multi sense transponding */
+	typedef struct multisense_transponder_t {
+		uint8_t command;
+		uint8_t type;          /* multi sense type                                     */
+		uint8_t zone;          /* zone and section                                     */
+		uint8_t adr1;          /* ls of address                                        */
+		uint8_t adr2;          /* ms of address                                        */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} multiSenseTranspMsg;
 
-/* muli sense device info */
-typedef struct multisense_deviceinfo_t {
-    uint8_t command;
-    uint8_t arg1;          /* first byte                                           */
-    uint8_t arg2;          /* second byte                                          */
-    uint8_t arg3;          /* third byte                                           */
-    uint8_t arg4;          /* fourth byte                                          */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} multiSenseDeviceInfoMsg;
+	/* muli sense device info */
+	typedef struct multisense_deviceinfo_t {
+		uint8_t command;
+		uint8_t arg1;          /* first byte                                           */
+		uint8_t arg2;          /* second byte                                          */
+		uint8_t arg3;          /* third byte                                           */
+		uint8_t arg4;          /* fourth byte                                          */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} multiSenseDeviceInfoMsg;
 
-/* Set slot sound functions */
-typedef struct locodata_t {
-    uint8_t command;
-    uint8_t slot;          /* slot number for this request                         */
-    uint8_t data;          /* data for request                                     */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} locoDataMsg;
+	/* Set slot sound functions */
+	typedef struct locodata_t {
+		uint8_t command;
+		uint8_t slot;          /* slot number for this request                         */
+		uint8_t data;          /* data for request                                     */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} locoDataMsg;
 
-/* Set slot sound functions */
-typedef struct locosnd_t {
-    uint8_t command;
-    uint8_t slot;          /* slot number for this request                         */
-    uint8_t snd;           /* sound/function request                               */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} locoSndMsg;
+	/* Set slot sound functions */
+	typedef struct locosnd_t {
+		uint8_t command;
+		uint8_t slot;          /* slot number for this request                         */
+		uint8_t snd;           /* sound/function request                               */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} locoSndMsg;
 
-/* Set slot direction and F0-F4 functions */
-typedef struct locodirf_t {
-    uint8_t command;
-    uint8_t slot;          /* slot number for this request                         */
-    uint8_t dirf;          /* direction & function request                         */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} locoDirfMsg;
+	/* Set slot direction and F0-F4 functions */
+	typedef struct locodirf_t {
+		uint8_t command;
+		uint8_t slot;          /* slot number for this request                         */
+		uint8_t dirf;          /* direction & function request                         */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} locoDirfMsg;
 
-/* Set slot speed functions */
-typedef struct locospd_t {
-    uint8_t command;
-    uint8_t slot;          /* slot number for this request                         */
-    uint8_t spd;           /* speed request                                        */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} locoSpdMsg;
+	/* Set slot speed functions */
+	typedef struct locospd_t {
+		uint8_t command;
+		uint8_t slot;          /* slot number for this request                         */
+		uint8_t spd;           /* speed request                                        */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} locoSpdMsg;
 
-/* Read/Write Slot data messages */
-typedef struct rwslotdata_t {
-    uint8_t command;
-    uint8_t mesg_size;     /* ummmmm, size of the message in bytes?                */
-    uint8_t slot;          /* slot number for this request                         */
-    uint8_t stat;          /* slot status                                          */
-    uint8_t adr;           /* loco address                                         */
-    uint8_t spd;           /* command speed                                        */
-    uint8_t dirf;          /* direction and F0-F4 bits                             */
-    uint8_t trk;           /* track status                                         */
-    uint8_t ss2;           /* slot status 2 (tells how to use ID1/ID2 & ADV Consist*/
-    uint8_t adr2;          /* loco address high                                    */
-    uint8_t snd;           /* Sound 1-4 / F5-F8                                    */
-    uint8_t id1;           /* ls 7 bits of ID code                                 */
-    uint8_t id2;           /* ms 7 bits of ID code                                 */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} rwSlotDataMsg;
+	/* Read/Write Slot data messages */
+	typedef struct rwslotdata_t {
+		uint8_t command;
+		uint8_t mesg_size;     /* ummmmm, size of the message in bytes?                */
+		uint8_t slot;          /* slot number for this request                         */
+		uint8_t stat;          /* slot status                                          */
+		uint8_t adr;           /* loco address                                         */
+		uint8_t spd;           /* command speed                                        */
+		uint8_t dirf;          /* direction and F0-F4 bits                             */
+		uint8_t trk;           /* track status                                         */
+		uint8_t ss2;           /* slot status 2 (tells how to use ID1/ID2 & ADV Consist*/
+		uint8_t adr2;          /* loco address high                                    */
+		uint8_t snd;           /* Sound 1-4 / F5-F8                                    */
+		uint8_t id1;           /* ls 7 bits of ID code                                 */
+		uint8_t id2;           /* ms 7 bits of ID code                                 */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} rwSlotDataMsg;
 
-/* Fast Clock Message */
-typedef struct fastclock_t {
-    uint8_t command;
-    uint8_t mesg_size;     /* ummmmm, size of the message in bytes?                    */
-    uint8_t slot;          /* slot number for this request                             */
-    uint8_t clk_rate;      /* 0 = Freeze clock, 1 = normal, 10 = 10:1 etc. Max is 0x7f */
-    uint8_t frac_minsl;    /* fractional minutes. not for external use.                */
-    uint8_t frac_minsh;
-    uint8_t mins_60;       /* 256 - minutes   */
-    uint8_t track_stat;    /* track status    */
-    uint8_t hours_24;      /* 256 - hours     */
-    uint8_t days;          /* clock rollovers */
-    uint8_t clk_cntrl;     /* bit 6 = 1; data is valid clock info */
-                        /*  "  "   0; ignore this reply        */
-    uint8_t id1;           /* id1/id2 is device id of last device to set the clock */
-    uint8_t id2;           /*  "   "  = zero shows not set has happened            */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} fastClockMsg;
+	/* Fast Clock Message */
+	typedef struct fastclock_t {
+		uint8_t command;
+		uint8_t mesg_size;     /* ummmmm, size of the message in bytes?                    */
+		uint8_t slot;          /* slot number for this request                             */
+		uint8_t clk_rate;      /* 0 = Freeze clock, 1 = normal, 10 = 10:1 etc. Max is 0x7f */
+		uint8_t frac_minsl;    /* fractional minutes. not for external use.                */
+		uint8_t frac_minsh;
+		uint8_t mins_60;       /* 256 - minutes   */
+		uint8_t track_stat;    /* track status    */
+		uint8_t hours_24;      /* 256 - hours     */
+		uint8_t days;          /* clock rollovers */
+		uint8_t clk_cntrl;     /* bit 6 = 1; data is valid clock info */
+							/*  "  "   0; ignore this reply        */
+		uint8_t id1;           /* id1/id2 is device id of last device to set the clock */
+		uint8_t id2;           /*  "   "  = zero shows not set has happened            */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} fastClockMsg;
 
-/* Programmer Task Message (used in Start and Final Reply, both )*/
-typedef struct progtask_t {
-    uint8_t command;
-    uint8_t mesg_size;     /* ummmmm, size of the message in bytes?                    */
-    uint8_t slot;          /* slot number for this request - slot 124 is programmer    */
-    uint8_t pcmd;          /* programmer command                                       */
-    uint8_t pstat;         /* programmer status error flags in reply message           */
-    uint8_t hopsa;         /* Ops mode - 7 high address bits of loco to program        */
-    uint8_t lopsa;         /* Ops mode - 7 low  address bits of loco to program        */
-    uint8_t trk;           /* track status. Note: bit 3 shows if prog track is busy    */
-    uint8_t cvh;           /* hi 3 bits of CV# and msb of data7                        */
-    uint8_t cvl;           /* lo 7 bits of CV#                                         */
-    uint8_t data7;         /* 7 bits of data to program, msb is in cvh above           */
-    uint8_t pad2;
-    uint8_t pad3;
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} progTaskMsg;
+	/* Programmer Task Message (used in Start and Final Reply, both )*/
+	typedef struct progtask_t {
+		uint8_t command;
+		uint8_t mesg_size;     /* ummmmm, size of the message in bytes?                    */
+		uint8_t slot;          /* slot number for this request - slot 124 is programmer    */
+		uint8_t pcmd;          /* programmer command                                       */
+		uint8_t pstat;         /* programmer status error flags in reply message           */
+		uint8_t hopsa;         /* Ops mode - 7 high address bits of loco to program        */
+		uint8_t lopsa;         /* Ops mode - 7 low  address bits of loco to program        */
+		uint8_t trk;           /* track status. Note: bit 3 shows if prog track is busy    */
+		uint8_t cvh;           /* hi 3 bits of CV# and msb of data7                        */
+		uint8_t cvl;           /* lo 7 bits of CV#                                         */
+		uint8_t data7;         /* 7 bits of data to program, msb is in cvh above           */
+		uint8_t pad2;
+		uint8_t pad3;
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} progTaskMsg;
 
-/* peer-peer transfer message */
-typedef struct peerxfer_t {
-    uint8_t command;
-    uint8_t mesg_size;     /* ummmmm, size of the message in bytes?                */
-    uint8_t src;           /* source of transfer                                   */
-    uint8_t dst_l;         /* ls 7 bits of destination                             */
-    uint8_t dst_h;         /* ms 7 bits of destination                             */
-    uint8_t pxct1;
-    uint8_t d1;            /* data byte 1                                          */
-    uint8_t d2;            /* data byte 2                                          */
-    uint8_t d3;            /* data byte 3                                          */
-    uint8_t d4;            /* data byte 4                                          */
-    uint8_t pxct2;
-    uint8_t d5;            /* data byte 5                                          */
-    uint8_t d6;            /* data byte 6                                          */
-    uint8_t d7;            /* data byte 7                                          */
-    uint8_t d8;            /* data byte 8                                          */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} peerXferMsg;
+	/* peer-peer transfer message */
+	typedef struct peerxfer_t {
+		uint8_t command;
+		uint8_t mesg_size;     /* ummmmm, size of the message in bytes?                */
+		uint8_t src;           /* source of transfer                                   */
+		uint8_t dst_l;         /* ls 7 bits of destination                             */
+		uint8_t dst_h;         /* ms 7 bits of destination                             */
+		uint8_t pxct1;
+		uint8_t d1;            /* data byte 1                                          */
+		uint8_t d2;            /* data byte 2                                          */
+		uint8_t d3;            /* data byte 3                                          */
+		uint8_t d4;            /* data byte 4                                          */
+		uint8_t pxct2;
+		uint8_t d5;            /* data byte 5                                          */
+		uint8_t d6;            /* data byte 6                                          */
+		uint8_t d7;            /* data byte 7                                          */
+		uint8_t d8;            /* data byte 8                                          */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} peerXferMsg;
 
-/* send packet immediate message */
-typedef struct sendpkt_t {
-    uint8_t command;
-    uint8_t mesg_size;     /* ummmmm, size of the message in bytes?                */
-    uint8_t val7f;         /* fixed value of 0x7f                                  */
-    uint8_t reps;          /* repeat count                                         */
-    uint8_t dhi;           /* high bits of data bytes                              */
-    uint8_t im1;
-    uint8_t im2;
-    uint8_t im3;
-    uint8_t im4;
-    uint8_t im5;
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} sendPktMsg;
+	/* send packet immediate message */
+	typedef struct sendpkt_t {
+		uint8_t command;
+		uint8_t mesg_size;     /* ummmmm, size of the message in bytes?                */
+		uint8_t val7f;         /* fixed value of 0x7f                                  */
+		uint8_t reps;          /* repeat count                                         */
+		uint8_t dhi;           /* high bits of data bytes                              */
+		uint8_t im1;
+		uint8_t im2;
+		uint8_t im3;
+		uint8_t im4;
+		uint8_t im5;
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} sendPktMsg;
 
-/* sv message */
-typedef struct sv_t {
-    uint8_t command;   /* LocoNet Op Code */
-    uint8_t mesg_size; /* size of the message in bytes */
-    uint8_t src;       /* 8 bit source address */
-    uint8_t sv_cmd;    /* SV Command */
-    uint8_t sv_type;   /* SV Type = 0x02 for this format */
-    uint8_t svx1;      /* <0,0,0,1,D3,D2,D1,D0 of next 4 bytes */
-    uint8_t dst_lo;    /* low  8 bits of 16 bit destination address */
-    uint8_t dst_hi;    /* high 8 bits of 16 bit destination address */
-    uint8_t sv_addl;   /* low  8 bits of 16 bit SV Offset */
-    uint8_t sv_addh;   /* low  8 bits of 16 bit SV Offset */
-    uint8_t svx2;      /* <0,0,0,1,D3,D2,D1,D0 of next 4 bytes */
-    uint8_t d1;        /* SV data byte 1 */
-    uint8_t d2;        /* SV data byte 2 */
-    uint8_t d3;        /* SV data byte 3 */
-    uint8_t d4;        /* SV data byte 4 */
-    uint8_t chksum;    /* exclusive-or checksum for the message */
-} svMsg;
+	/* sv message */
+	typedef struct sv_t {
+		uint8_t command;   /* LocoNet Op Code */
+		uint8_t mesg_size; /* size of the message in bytes */
+		uint8_t src;       /* 8 bit source address */
+		uint8_t sv_cmd;    /* SV Command */
+		uint8_t sv_type;   /* SV Type = 0x02 for this format */
+		uint8_t svx1;      /* <0,0,0,1,D3,D2,D1,D0 of next 4 bytes */
+		uint8_t dst_lo;    /* low  8 bits of 16 bit destination address */
+		uint8_t dst_hi;    /* high 8 bits of 16 bit destination address */
+		uint8_t sv_addl;   /* low  8 bits of 16 bit SV Offset */
+		uint8_t sv_addh;   /* low  8 bits of 16 bit SV Offset */
+		uint8_t svx2;      /* <0,0,0,1,D3,D2,D1,D0 of next 4 bytes */
+		uint8_t d1;        /* SV data byte 1 */
+		uint8_t d2;        /* SV data byte 2 */
+		uint8_t d3;        /* SV data byte 3 */
+		uint8_t d4;        /* SV data byte 4 */
+		uint8_t chksum;    /* exclusive-or checksum for the message */
+	} svMsg;
 
 	// Message structure to determine the size of a message
-typedef struct {
-    uint8_t command;   /* LocoNet Op Code */
-    uint8_t mesg_size; /* size of the message in bytes */
-} szMsg;
+	typedef struct {
+		uint8_t command;   /* LocoNet Op Code */
+		uint8_t mesg_size; /* size of the message in bytes */
+	} szMsg;
 
-typedef struct se_t {
-    uint8_t command;
-    uint8_t mesg_size;     /* ummmmm, size of the message in bytes?                */
-    uint8_t addr_h;           /* ms 7 bits of destination                                   */
-    uint8_t addr_l;         /* ls 7 bits of destination                             */
-    uint8_t cmd;         /* command                             */
-    uint8_t se1;		/* data Byte 1 */
-    uint8_t se2;            /* data byte 2                                          */
-    uint8_t se3;            /* data byte 3                                          */
-    uint8_t chksum;        /* exclusive-or checksum for the message                */
-} seMsg;
+	typedef struct se_t {
+		uint8_t command;
+		uint8_t mesg_size;     /* ummmmm, size of the message in bytes?                */
+		uint8_t addr_h;           /* ms 7 bits of destination                                   */
+		uint8_t addr_l;         /* ls 7 bits of destination                             */
+		uint8_t cmd;         /* command                             */
+		uint8_t se1;		/* data Byte 1 */
+		uint8_t se2;            /* data byte 2                                          */
+		uint8_t se3;            /* data byte 3                                          */
+		uint8_t chksum;        /* exclusive-or checksum for the message                */
+	} seMsg;
 
-typedef union {
-	uint8_t D[7];
-	struct {
-		uint16_t deviceClass;
-		uint16_t lncvNumber;
-		uint16_t lncvValue;
-		uint8_t flags;
-	} data;
-} UhlenbrockMsgPayload;
+	typedef union {
+		uint8_t D[7];
+		struct {
+			uint16_t deviceClass;
+			uint16_t lncvNumber;
+			uint16_t lncvValue;
+			uint8_t flags;
+		} data;
+	} UhlenbrockMsgPayload;
 
-typedef struct
-{
-	uint8_t command;   // OPC_PEER_XFER for replies, OPC_IMM_PACKET for commands
-	uint8_t mesg_size; // 15 bytes
-	uint8_t SRC;       // source
-	uint8_t DSTL;      // destination, low byte
-	uint8_t DSTH;      // destination, high byte
-	uint8_t ReqId;     // Request ID, distinguishes commands
-	uint8_t PXCT1;     // MSBs of following data
-	UhlenbrockMsgPayload payload; // Data Bytes
-} UhlenbrockMsg;
+	typedef struct
+	{
+		uint8_t command;   // OPC_PEER_XFER for replies, OPC_IMM_PACKET for commands
+		uint8_t mesg_size; // 15 bytes
+		uint8_t SRC;       // source
+		uint8_t DSTL;      // destination, low byte
+		uint8_t DSTH;      // destination, high byte
+		uint8_t ReqId;     // Request ID, distinguishes commands
+		uint8_t PXCT1;     // MSBs of following data
+		UhlenbrockMsgPayload payload; // Data Bytes
+	} UhlenbrockMsg;
 
-typedef struct
-{
-	uint8_t command;    // OPC_ANALOGIO
-	uint8_t mesg_size;  // 8 bytes
-	uint8_t analog_cmd; // <0,WR,aa-aaaa>  a=1: analog read/write
-	uint8_t analog_1;   // address low
-	uint8_t analog_2;   // address high
-	uint8_t analog_3;   // scale/polarity bits (coding????)
-	uint8_t analog_4;   // ls 7 bits analog value (ms bits where???)
-} AnalogIoMsg;
+	typedef struct
+	{
+		uint8_t command;    // OPC_ANALOGIO
+		uint8_t mesg_size;  // 8 bytes
+		uint8_t analog_cmd; // <0,WR,aa-aaaa>  a=1: analog read/write
+		uint8_t analog_1;   // address low
+		uint8_t analog_2;   // address high
+		uint8_t analog_3;   // scale/polarity bits (coding????)
+		uint8_t analog_4;   // ls 7 bits analog value (ms bits where???)
+	} AnalogIoMsg;
 
 
-typedef union {
-		locoAdrMsg		la ;
-		switchAckMsg		sa ;
-		slotReqMsg		sr ;
-		slotMoveMsg		sm ;
-		consistFuncMsg	        cf ;
-		slotStatusMsg 	        ss ;
-		longAckMsg	 	lack ;
-		inputRepMsg		ir ;
-		swRepMsg		srp ;
-		swReqMsg		srq ;
-		locoDataMsg		ld ;
-		locoSndMsg		ls ;
-		locoDirfMsg		ldf ;
-		locoSpdMsg		lsp ;
-		rwSlotDataMsg		sd ;
-		fastClockMsg		fc ;
-		progTaskMsg		pt ;
-		peerXferMsg		px ;
-		sendPktMsg		sp ;
-		svMsg			sv ;
-		szMsg			sz ;
-		seMsg			se ;
+	typedef union {
+		locoAdrMsg		la;
+		switchAckMsg		sa;
+		slotReqMsg		sr;
+		slotMoveMsg		sm;
+		consistFuncMsg	        cf;
+		slotStatusMsg 	        ss;
+		longAckMsg	 	lack;
+		inputRepMsg		ir;
+		swRepMsg		srp;
+		swReqMsg		srq;
+		locoDataMsg		ld;
+		locoSndMsg		ls;
+		locoDirfMsg		ldf;
+		locoSpdMsg		lsp;
+		rwSlotDataMsg		sd;
+		fastClockMsg		fc;
+		progTaskMsg		pt;
+		peerXferMsg		px;
+		sendPktMsg		sp;
+		svMsg			sv;
+		szMsg			sz;
+		seMsg			se;
 		UhlenbrockMsg           ub;
 		AnalogIoMsg             anio;
 		multiSenseTranspMsg	mstr;
 		multiSenseDeviceInfoMsg	msdi;
-		uint8_t			data[16] ;
-} lnMsg ;
+		uint8_t			data[16];
+	} lnMsg;
 
 #ifdef __BORLANDC__
 #pragma pack( pop )
 #endif
 
-/* loconet opcodes */
+	/* loconet opcodes */
 #define OPC_BUSY          0x81
 #define OPC_GPOFF         0x82
 #define OPC_GPON          0x83

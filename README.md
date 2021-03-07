@@ -16,6 +16,8 @@ and the stats are updated approproately.
 This library uses TIMER1 & ICP (UNO) and/or TIMER5 and ICP5 (MEGA)
 resources and associated interrupt handler hooks. On the STM32,
 it uses TIM2 and the EXTI10-15 interrupts handler hooks.
+On the ESP8266, the implementation uses TIMER1 and associated
+interrupt handler hooks.
 
 Currently the library only supports the AVR mega and tiny range that
 have an Input Capture Unit (ICP) associated with a 16-Bit Timer/Counter.
@@ -26,6 +28,7 @@ It's known to work with:
 - Leonardo, LeoStick, Arduino Pro Micro (ATmega32U4)
 - Various AVRTiny Boards (ATTiny84, ATTiny84A, ATTiny841)
 - Blue Pill (STM32F1 w/ libopencm3 and Arduino Stubs)
+- NodeMCU v1.0 (ESP8266 core for Arduino)
 
 As of 2020-03-28 - Hans Tanner added the capability to change the polarity
 of the Rx and Tx electrical signal (depending on your circuitry) in the utility/ln_config.h file.

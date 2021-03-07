@@ -4,23 +4,23 @@
 /*
  ****************************************************************************
  * Copyright (C) 2004 Alex Shepherd
- * 
+ *
  * Portions Copyright (C) Digitrax Inc.
- * 
+ *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- * 
+ *
  ****************************************************************************
  * 2014/10/10 - Tom Knox
  *
@@ -48,19 +48,14 @@
  * NOTE: THIS IS ONLY DONE FOR THE ARDUINO UNO SO FAR. NEEDS TO BE ADDED FOR THE DUE
  * AND THE ATTINY BOARDS IF YOU WANT TO WORK WITH THEM
  * changed the definition of the SET_TX macros in ln_sw_uart.h line 48 following to use
- * correct bit levels depending on inverse / non-inverse transmit. 
+ * correct bit levels depending on inverse / non-inverse transmit.
  */
 
+ // John Plocher
+ // figure out what board we are building
 
-// John Plocher
-// figure out what board we are building for
-
-// Common defines
-#if defined(STM32F1)
-// no cbi/sbi for STM32F1
-#else
-// TODO:  Add support for Leo and others...
-#ifndef ESP8266
+ // Common defines
+#if !defined(STM32F1) && !defined(ESP8266)
 #  ifdef PINL	//      For the Mega 2560 (should work with 1280, etc)
 #    define _LNET_USE_MEGA
 #  else		//	For the UNO:
@@ -68,14 +63,13 @@
 #  endif
 
 // Common defines
-#ifndef cbi
-#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
-#endif
+#  ifndef cbi
+#    define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
+#  endif
 
-#ifndef sbi
-#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
-#endif
-
+#  ifndef sbi
+#    define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+#  endif
 #endif
 
 #if defined(STM32F1)
@@ -102,18 +96,18 @@ typedef volatile LnPortRegisterType* LnPortAddrType;
 #  define LN_TIMER_TX_RELOAD_ADJUST   60
 #else
 #  if defined(STM32F1)
-#    define LN_BIT_PERIOD               (rcc_apb1_frequency * 2 / 16666)
+#    define LN_BIT_PERIOD             (rcc_apb1_frequency * 2 / 16666)
 #  else
-#    define LN_BIT_PERIOD               (F_CPU / 16666)
+#    define LN_BIT_PERIOD             (F_CPU / 16666)
 #  endif
-#  define LN_TMR_PRESCALER              1
+#  define LN_TMR_PRESCALER            1
 #  define LN_TIMER_TX_RELOAD_ADJUST   106 //  14,4 us delay borrowed from FREDI sysdef.h
 #endif
 
 // Set LN_TX_ECHO to receive a copy of every transmitted message using LocoNet.receive()
 // Or set to 0 to suppress echos. Wrapped in #ifndef so it can be set on a per-build basis.
 #ifndef LN_TX_ECHO
-#define LN_TX_ECHO 1
+#define LN_TX_ECHO                   1
 #endif
 
 #define LN_TX_RETRIES_MAX            25
@@ -151,7 +145,7 @@ typedef volatile LnPortRegisterType* LnPortAddrType;
 // *                              The RX port *MUST BE* the ICP pin            *
 // *                              (port PINB bit PB0, Arduino pin 8 on a '168) *
 // *****************************************************************************
-#elif defined( _LNET_USE_UNO )
+#elif defined(_LNET_USE_UNO)
 
 #if defined(__AVR_ATmega32U4__)
 
@@ -221,30 +215,28 @@ typedef volatile LnPortRegisterType* LnPortAddrType;
 // *****************************************************************************
 // *                                                       Arduino --UNKNOWN-- *
 // *****************************************************************************
-#else
-#ifdef ESP8266
+#elif defined(ESP8266)
 
 // Read from pin D6 on ESP8266 devices
-#ifndef LN_RX_PORT
-#define LN_RX_PORT D6
-#endif
-#define LN_RX_DDR  
-#define LN_RX_BIT
+#  ifndef LN_RX_PORT
+#    define LN_RX_PORT D6
+#  endif
+#  define LN_RX_DDR  
+#  define LN_RX_BIT
 
-#define bit_is_set(sfr, bit)   (digitalRead(sfr) == HIGH)
-#define bit_is_clear(sfr, bit) (digitalRead(sfr) == LOW)
+#  define bit_is_set(sfr, bit)   (digitalRead(sfr) == HIGH)
+#  define bit_is_clear(sfr, bit) (digitalRead(sfr) == LOW)
 
 #else
-#error "No Arduino Board/Processor selected"
+#  error "No Arduino Board/Processor selected"
 
-#define LN_SB_INT_ENABLE_REG  TIMSK
-#define LN_SB_INT_ENABLE_BIT  TICIE1
-#define LN_SB_INT_STATUS_REG  TIFR
-#define LN_SB_INT_STATUS_BIT  ICF1
-#define LN_TMR_INT_ENABLE_REG TIMSK
-#define LN_TMR_INT_STATUS_REG TIFR
+#  define LN_SB_INT_ENABLE_REG  TIMSK
+#  define LN_SB_INT_ENABLE_BIT  TICIE1
+#  define LN_SB_INT_STATUS_REG  TIFR
+#  define LN_SB_INT_STATUS_BIT  ICF1
+#  define LN_TMR_INT_ENABLE_REG TIMSK
+#  define LN_TMR_INT_STATUS_REG TIFR
 
-#endif  // ESP8266
 #endif	// board type
-#endif	// include file
 
+#endif	// include file
