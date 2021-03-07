@@ -56,13 +56,13 @@
  *****************************************************************************/
 
 #include <string.h>
+
 #if defined(ARDUINO) && ARDUINO >= 100
 #include "Arduino.h"
 #else
 #include "WProgram.h"
 #endif
-//#include "loconet.h"
-//#include "ln_interface.h"
+
 #include "ln_buf.h"
 
 #define		LN_BUF_OPC_WRAP_AROUND	(uint8_t)0x00		// Special character to indcate a buffer wrap

@@ -119,11 +119,12 @@ typedef enum
 class LocoNetClass
 {
   private:
-    LnBuf   LnBuffer ;
+    LnBuf LnBuffer;
 	void 		setTxPin(uint8_t txPin);
 
   public:
     LocoNetClass();
+
     void        init(void);
     void        init(uint8_t txPin);
     bool 		available(void);

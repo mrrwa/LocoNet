@@ -38,7 +38,14 @@
  * 
  *****************************************************************************/
 
-#if defined(STM32F1)
+#if defined(ESP8266)
+#  include <Arduino.h>
+// The Arduino standard GPIO routines are not enough,
+// must use some from the Espressif SDK as well
+extern "C" {
+#  include "gpio.h"
+}
+#elif defined(STM32F1)
 #include <libopencm3/cm3/nvic.h>
 #include <libopencm3/stm32/exti.h>
 #include <libopencm3/stm32/gpio.h>
@@ -71,17 +78,54 @@ volatile lnMsg    * volatile lnTxData ;
 volatile uint8_t  lnTxIndex ;
 volatile uint8_t  lnTxLength ;
 volatile uint8_t  lnTxSuccess ;   // this boolean flag as a message from timer interrupt to send function
+#ifdef ESP8266
+volatile uint8_t  lnLastTxBit;
+#endif
 
+#ifndef ESP8266
+volatile uint8_t  *txPort;
+#else
 LnPortAddrType txPort;
-uint8_t txPin;
+#endif
+uint8_t           txPin;
 
+#ifndef ESP8266
 #define LN_TX_PORT *txPort
-#define LN_TX_BIT txPin
+#define LN_TX_BIT  txPin
+#else
+#define LN_TX_PORT txPin
+#define LN_TX_BIT
+#endif
 
 void setTxPortAndPin(LnPortAddrType newTxPort, uint8_t newTxPin)
 {
+#ifndef ESP8266  
   txPort = newTxPort;
+#else
+  // Mute unused parameter warning
+  (void)(newTxPort);
+#endif
   txPin = newTxPin;
+}
+
+#ifdef ESP8266
+bool ICACHE_RAM_ATTR isLocoNetCollision() 
+{
+#ifdef LN_SW_UART_TX_INVERTED
+	#ifdef LN_SW_UART_RX_INVERTED
+	bool result = (lnLastTxBit != digitalRead(LN_RX_PORT));
+	#else
+	bool result = (lnLastTxBit == digitalRead(LN_RX_PORT));
+	#endif
+#else
+	#ifdef LN_SW_UART_RX_INVERTED
+	bool result = (lnLastTxBit == digitalRead(LN_RX_PORT));
+	#else
+	bool result = (lnLastTxBit != digitalRead(LN_RX_PORT));
+	#endif
+#endif
+
+	return result;
 }
 
 #if defined(STM32F1)
@@ -101,7 +145,11 @@ void setTxPortAndPin(LnPortAddrType newTxPort, uint8_t newTxPin)
  *
  **************************************************************************/
 
+#if defined(ESP8266)
+void ICACHE_RAM_ATTR ln_esp8266_pin_isr()
+#else
 ISR(LN_SB_SIGNAL)
+#endif
 {
 #if defined(STM32F1)
   // Check if it really was EXTI14 that triggered this interrupt.
@@ -111,10 +159,18 @@ ISR(LN_SB_SIGNAL)
   }
 #endif
 
+#if defined(ESP8266)
+  // Disable the pin interrupt
+  detachInterrupt(digitalPinToInterrupt(LN_RX_PORT));
+
+  // Attach timer interrupt handler and restart timer
+  timer1_attachInterrupt(ln_esp8266_timer1_isr);
+  timer1_write(LN_TIMER_RX_START_PERIOD);
+#else
   // Disable the Input Comparator Interrupt
   LN_CLEAR_START_BIT_FLAG();
   LN_DISABLE_START_BIT_INTERRUPT();     
-
+  
 #if defined(STM32F1)
   lnCompareTarget = timer_get_counter(TIM2) + LN_TIMER_RX_START_PERIOD;
   /* Set the initual output compare value for OC1. */
@@ -127,12 +183,19 @@ ISR(LN_SB_SIGNAL)
   // Clear the current Compare interrupt status bit and enable the Compare interrupt
   LN_CLEAR_TIMER_FLAG() ;
   LN_ENABLE_TIMER_INTERRUPT() ; 
+#endif
 
   // Set the State to indicate that we have begun to Receive
-  lnState = LN_ST_RX ;
+  lnState = LN_ST_RX;
 
   // Reset the bit counter so that on first increment it is on 0
   lnBitCount = 0;
+
+#if defined(ESP8266)
+  // Must clear this bit in the interrupt register,
+  // it gets set even when interrupts are disabled
+  GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, 1 << LN_RX_PORT);
+#endif
 }
 
 /**************************************************************************
@@ -146,10 +209,17 @@ ISR(LN_SB_SIGNAL)
  * it samples the bit and shifts it into the buffer.
  *
  **************************************************************************/
+#if defined(ESP8266)
+void ICACHE_RAM_ATTR ln_esp8266_timer1_isr()
+#else
 ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
+#endif
 {
-	LN_CLEAR_TIMER_FLAG();
   // Advance the Compare Target by a bit period
+#if defined(ESP8266)
+  timer1_write(LN_TIMER_RX_RELOAD_PERIOD);
+#else
+	LN_CLEAR_TIMER_FLAG();
   lnCompareTarget += LN_TIMER_RX_RELOAD_PERIOD;
 #if defined(STM32F1)
   timer_set_oc_value(TIM2, TIM_OC1, lnCompareTarget);
@@ -162,7 +232,7 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
   if( lnState == LN_ST_RX ) {  // Are we in RX mode
     if( lnBitCount < 9)  {   // Are we in the Stop Bits phase
       lnCurrentByte >>= 1;
-#ifdef LN_SW_UART_RX_INVERTED  
+#ifdef LN_SW_UART_RX_INVERTED
       if( bit_is_clear(LN_RX_PORT, LN_RX_BIT)) {
 #else		
       if( bit_is_set(LN_RX_PORT, LN_RX_BIT)) {
@@ -172,10 +242,19 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
       return ;
     }
 
+#if defined(ESP8266)
+    // Enable the pin interrupt
+  #ifdef LN_SW_UART_RX_INVERTED  
+    attachInterrupt(digitalPinToInterrupt(LN_RX_PORT), ln_esp8266_pin_isr, RISING);
+  #else
+    attachInterrupt(digitalPinToInterrupt(LN_RX_PORT), ln_esp8266_pin_isr, FALLING);
+  #endif
+#else
     // Clear the Start Bit Interrupt Status Flag and Enable ready to 
     // detect the next Start Bit
     LN_CLEAR_START_BIT_FLAG() ;
     LN_ENABLE_START_BIT_INTERRUPT() ;
+#endif
 
     // If the Stop bit is not Set then we have a Framing Error
 #ifdef LN_SW_UART_RX_INVERTED  
@@ -223,7 +302,9 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 
       // Begin the Start Bit
       LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT);
-
+#if defined(ESP8266)
+      timer1_write(LN_TIMER_TX_RELOAD_PERIOD - LN_TIMER_TX_RELOAD_ADJUST);
+#else
       // Get the Current Timer1 Count and Add the offset for the Compare target
       // added adjustment value for bugfix (Olaf Funke)
 #if defined(STM32F1)
@@ -277,13 +358,25 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
       // Even though we are waiting, other nodes may try and transmit early
       // so Clear the Start Bit Interrupt Status Flag and Enable ready to 
       // detect the next Start Bit
+#if defined(ESP8266)
+  #ifdef LN_SW_UART_RX_INVERTED  
+      attachInterrupt(digitalPinToInterrupt(LN_RX_PORT), ln_esp8266_pin_isr, RISING);
+  #else
+      attachInterrupt(digitalPinToInterrupt(LN_RX_PORT), ln_esp8266_pin_isr, FALLING);
+  #endif
+#else
       LN_CLEAR_START_BIT_FLAG() ;
       LN_ENABLE_START_BIT_INTERRUPT() ;
+#endif
     } 
     else if( lnBitCount >= LN_BACKOFF_MAX ) { 
       // declare network to free after maximum backoff delay
       lnState = LN_ST_IDLE ;
+#if defined(ESP8266)
+      timer1_detachInterrupt();
+#else
       LN_DISABLE_TIMER_INTERRUPT() ;
+#endif
     }
   }
 }
@@ -294,12 +387,21 @@ void initLocoNetHardware( LnBuf *RxBuffer )
   lnRxBuffer = RxBuffer ;
 
   // Set the RX line to Input
-  pinMode(LN_RX_PIN_NAME, INPUT);
 
+#if defined(ESP8266)
+  pinMode(LN_RX_PORT, INPUT);
+#else
+  pinMode(LN_RX_PIN_NAME, INPUT);
+#endif
+  
   // Set the TX line to Inactive
   LN_SW_UART_SET_TX_HIGH(LN_TX_PORT, LN_TX_BIT);
 
-#if defined(STM32F1)
+#if defined(ESP8266)
+  timer1_detachInterrupt();
+  timer1_enable(TIM_DIV16, TIM_EDGE, TIM_SINGLE);
+
+#elif defined(STM32F1)
   // === Setup the timer ===
   
   // Enable TIM2 clock. 
@@ -360,10 +462,9 @@ void initLocoNetHardware( LnBuf *RxBuffer )
   nvic_enable_irq(NVIC_EXTI15_10_IRQ);
 
 #else
-
-#ifdef LN_INIT_COMPARATOR
+  #ifdef LN_INIT_COMPARATOR
   LN_INIT_COMPARATOR();	
-#else
+  #else
   // First Enable the Analog Comparitor Power, 
   // Set the mode to Falling Edge
   // Enable Analog Comparator to Trigger the Input Capture unit
@@ -377,17 +478,28 @@ void initLocoNetHardware( LnBuf *RxBuffer )
   // ICRn Register. The noise canceler uses the system clock and is therefore not affected by the 
   // prescaler.
   TCCR1B |= (1<<ICNC1) ;    		// Enable Noise Canceler 
+  #endif
 #endif
+
   lnState = LN_ST_IDLE ;
+
+#if defined(ESP8266)
+  #ifdef LN_SW_UART_RX_INVERTED  
+  attachInterrupt(digitalPinToInterrupt(LN_RX_PORT), ln_esp8266_pin_isr, RISING);
+  #else
+  attachInterrupt(digitalPinToInterrupt(LN_RX_PORT), ln_esp8266_pin_isr, FALLING);
+  #endif
+#else
   //Clear StartBit Interrupt flag
   LN_CLEAR_START_BIT_FLAG();
   //Enable StartBit Interrupt
   LN_CLEAR_START_BIT_FLAG();
   
   //Set rising edge for StartBit if signal is inverted
-#ifdef LN_SW_UART_RX_INVERTED  
+  #ifdef LN_SW_UART_RX_INVERTED  
   sbi(LN_SB_EDGE_CFG_REG, LN_SB_EDGE_BIT);
-#endif
+  #endif
+
   // Set Timer Clock Source 
   LN_TMR_CONTROL_REG = (LN_TMR_CONTROL_REG & 0xF8) | LN_TMR_PRESCALER;
 #endif // STM32F1 
@@ -420,7 +532,12 @@ LN_STATUS sendLocoNetPacketTry(lnMsg *TxData, unsigned char ucPrioDelay)
   if (lnState == LN_ST_CD_BACKOFF) {
     if (lnBitCount >= ucPrioDelay) {	// Likely we don't want to wait as long as
       lnState = LN_ST_IDLE;			// the timer ISR waits its maximum delay.
+
+#if defined(ESP8266)
+      timer1_detachInterrupt();
+#else
       LN_DISABLE_TIMER_INTERRUPT() ;
+#endif
     }
   }
   interrupts();  // a delayed start bit interrupt will happen now,
@@ -444,22 +561,43 @@ LN_STATUS sendLocoNetPacketTry(lnMsg *TxData, unsigned char ucPrioDelay)
   // The last time we check for free net until sending our start bit
   // must be as short as possible, not interrupted.
   noInterrupts() ;
+
+#if defined(ESP8266)
+  // Before we do anything else - Disable StartBit Interrupt
+  detachInterrupt(digitalPinToInterrupt(LN_RX_PORT));
+  #ifdef LN_SW_UART_RX_INVERTED  
+  if( bit_is_set(LN_RX_PORT,LN_RX_BIT) ) {
+  #else
+  if( bit_is_clear(LN_RX_PORT,LN_RX_BIT) ) {
+  #endif
+#else
   // Before we do anything else - Disable StartBit Interrupt
   LN_DISABLE_START_BIT_INTERRUPT() ;
-#if defined(STM32F1)
+#  if defined(STM32F1)
   if (exti_get_flag_status(EXTI14)) {
-#else
+#  else
   if (bit_is_set(LN_SB_INT_STATUS_REG, LN_SB_INT_STATUS_BIT)) {
+#  endif
 #endif
     // first we disabled it, than before sending the start bit, we found out
     // that somebody was faster by examining the start bit interrupt request flag
+#if defined(ESP8266)
+  #ifdef LN_SW_UART_RX_INVERTED  
+    attachInterrupt(digitalPinToInterrupt(LN_RX_PORT), ln_esp8266_pin_isr, RISING);
+  #else
+    attachInterrupt(digitalPinToInterrupt(LN_RX_PORT), ln_esp8266_pin_isr, FALLING);
+  #endif
+#else
     LN_ENABLE_START_BIT_INTERRUPT() ;
+#endif
+
     interrupts() ;  // receive now what our rival is sending
     return LN_NETWORK_BUSY;
   }
 
   LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT);        // Begin the Start Bit
 
+#if !defined(ESP8266)
   // Get the Current Timer1 Count and Add the offset for the Compare target
   // added adjustment value for bugfix (Olaf Funke)
 #if defined(STM32F1)
@@ -486,9 +624,14 @@ LN_STATUS sendLocoNetPacketTry(lnMsg *TxData, unsigned char ucPrioDelay)
   // Reset the bit counter
   lnBitCount = 0 ;                          
 
+#if defined(ESP8266)
+  timer1_attachInterrupt(ln_esp8266_timer1_isr);
+  timer1_write(LN_TIMER_TX_RELOAD_PERIOD - LN_TIMER_TX_RELOAD_ADJUST);
+#else
   // Clear the current Compare interrupt status bit and enable the Compare interrupt
   LN_CLEAR_TIMER_FLAG() ;
   LN_ENABLE_TIMER_INTERRUPT() ; 
+#endif
 
   while (lnState == LN_ST_TX) {
     // now busy wait until the interrupts do the rest
@@ -502,5 +645,3 @@ LN_STATUS sendLocoNetPacketTry(lnMsg *TxData, unsigned char ucPrioDelay)
   }
   return LN_UNKNOWN_ERROR; // everything else is an error
 }
-
-

@@ -64,14 +64,26 @@
  *****************************************************************************/
 
 // Uncomment to enable SV Processing Debug Print statements
-//#define DEBUG_SV
+// #define DEBUG_SV
 
 #include "LocoNet.h"
+
 #include "ln_sw_uart.h"
 #include "ln_config.h"
 #include "utils.h"
 
-#if defined(STM32F1)
+#if defined(ESP8266)
+#include <EEPROM.h>
+#define E2END 0x1FF // Simulate 512 byte EEPROM
+
+uint8_t eeprom_read_byte(const uint8_t* offset) {
+  return EEPROM.read((int)offset);
+}	
+
+void eeprom_write_byte(const uint8_t* offset, uint8_t value) {
+  EEPROM.write((int)offset, value);
+}
+#elif defined(STM32F1)
 #include <FreeRTOS.h>
 #include <task.h>
 #include <libopencm3/stm32/gpio.h>
@@ -97,7 +109,11 @@ LocoNetClass::LocoNetClass()
 
 void LocoNetClass::init(void)
 {
-  init(6); // By default use pin 6 as the Tx pin to be compatible with the previous library default 
+  #ifdef ESP8266
+  init(D7); // By default use pin D7 as the Tx pin to be compatible with the previous library default
+#else
+  init(6); // By default use pin 6 as the Tx pin to be compatible with the previous library default
+#endif
 }
 
 const char* LocoNetClass::getStatusStr(LN_STATUS Status)
@@ -114,6 +130,11 @@ void LocoNetClass::init(uint8_t txPin)
   initLnBuf(&LnBuffer) ;
   setTxPin(txPin);
   initLocoNetHardware(&LnBuffer);
+
+#ifdef ESP8266
+  // Setup EEProm emulation on EPS8266
+  EEPROM.begin(E2END);
+#endif
 }
 
 void LocoNetClass::setTxPin(uint8_t txPin)
@@ -126,8 +147,8 @@ void LocoNetClass::setTxPin(uint8_t txPin)
 }
 //#else
   pinMode(txPin, OUTPUT);
-  //gpio_set(GPIOB, GPIO15);
-  
+
+#ifndef ESP8266
 	// Not figure out which Port bit is the Tx Bit from the Arduino pin number
   LnPortRegisterType bitMask = digitalPinToBitMask(txPin);
   LnPortRegisterType bitMaskTest = 0x01;
@@ -138,8 +159,11 @@ void LocoNetClass::setTxPin(uint8_t txPin)
   
   while(bitMask != bitMaskTest)
 	bitMaskTest = 1 << ++bitNum;
-//#endif
+
   setTxPortAndPin(out, bitNum);
+#else
+  setTxPortAndPin(nullptr, txPin);
+#endif
 }
 
 // Check to see if any messages is ready to receive()?
@@ -214,7 +238,6 @@ LN_STATUS LocoNetClass::send(lnMsg *pPacket, uint8_t ucPrioDelay)
     do                          // we did not see the backoff state once
     {
       enReturn = sendLocoNetPacketTry(pPacket, ucPrioDelay);
-
       if (enReturn == LN_DONE)  // success?
         return LN_DONE;
 
@@ -1679,6 +1702,7 @@ SV_STATUS LocoNetSystemVariableClass::doDeferredProcessing( void )
     unData.stDecoded.unSerialNumber.b.hi          = readSVStorage(SV_ADDR_SERIAL_NUMBER_H);
     
     encodePeerData( &msg.px, unData.abPlain );
+
 
     /* Note that this operation intentionally uses a "make one attempt to
        send to LocoNet" method here */
