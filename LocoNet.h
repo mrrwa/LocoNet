@@ -510,6 +510,11 @@ class LocoNetCVClass
 	extern "C" {
 #endif
 
+// Notify *from the ISR context* that a byte was received.
+// This is useful to, e.g., wake a task that will checks for new
+// LocoNet messages.
+extern void notifyLnByteReceived() __attribute__ ((weak));
+
 extern void notifySensor( uint16_t Address, uint8_t State ) __attribute__ ((weak));
 
 // Address: Switch Address.
@@ -565,7 +570,7 @@ extern void notifySVChanged(uint16_t Offset) __attribute__ ((weak));
  * A response just as in the case of notifyLNCVProgrammingStart will be generated.
  * If a module responds to a LNCVDiscover, it should apparently enter programming mode immediately.
  */
-extern int8_t notifyLNCVdiscover( uint16_t & ArtNr, uint16_t & ModuleAddress ) __attribute__ ((weak));;
+extern int8_t notifyLNCVdiscover( uint16_t & ArtNr, uint16_t & ModuleAddress ) __attribute__ ((weak));
 
 /**
  * Notification that a LNCVProgrammingStart message was received. Application code should process this message and
