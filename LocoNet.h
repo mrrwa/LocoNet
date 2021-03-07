@@ -3,7 +3,7 @@
 
 /****************************************************************************
  * 	Copyright (C) 2009 to 2013 Alex Shepherd
- * 	Copyright (C) 2013 Damian Philipp
+ * 	Copyright (C) 2020 Damian Philipp
  * 
  * 	Portions Copyright (C) Digitrax Inc.
  * 	Portions Copyright (C) Uhlenbrock Elektronik GmbH
@@ -127,7 +127,7 @@ class LocoNetClass
 
     void        init(void);
     void        init(uint8_t txPin);
-    boolean 		available(void);
+    bool 		available(void);
     uint8_t			length(void);
     lnMsg*      receive(void);
     LN_STATUS   send(lnMsg *TxPacket);
@@ -245,7 +245,7 @@ class LocoNetThrottleClass
 	TH_ERROR setFunc5to8Direct(uint8_t Value) ;
 	
 	TH_SPEED_STEPS getSpeedSteps(void);
-	TH_ERROR setSpeedSteps(TH_SPEED_STEPS newSpeedSteps);
+	void setSpeedSteps(TH_SPEED_STEPS newSpeedSteps);
 
 	TH_STATE getState(void) ;
 	uint8_t getSlot() { return mySlot ; }
@@ -330,6 +330,9 @@ class LocoNetFastClockClass
 /************************************************************************************
     SV (System Variable Handling
 ************************************************************************************/
+#if defined(STM32F1)
+// STM31F1 has no flash.
+#else
 
 typedef enum
 {
@@ -479,6 +482,8 @@ class LocoNetSystemVariableClass
     SV_STATUS doDeferredProcessing( void );
 };
 
+#endif // STM32F1
+
 class LocoNetCVClass
 {
   private:
@@ -505,6 +510,11 @@ class LocoNetCVClass
 #if defined (__cplusplus)
 	extern "C" {
 #endif
+
+// Notify *from the ISR context* that a byte was received.
+// This is useful to, e.g., wake a task that will checks for new
+// LocoNet messages.
+extern void notifyLnByteReceived() __attribute__ ((weak));
 
 extern void notifySensor( uint16_t Address, uint8_t State ) __attribute__ ((weak));
 
@@ -561,7 +571,7 @@ extern void notifySVChanged(uint16_t Offset) __attribute__ ((weak));
  * A response just as in the case of notifyLNCVProgrammingStart will be generated.
  * If a module responds to a LNCVDiscover, it should apparently enter programming mode immediately.
  */
-extern int8_t notifyLNCVdiscover( uint16_t & ArtNr, uint16_t & ModuleAddress ) __attribute__ ((weak));;
+extern int8_t notifyLNCVdiscover( uint16_t & ArtNr, uint16_t & ModuleAddress ) __attribute__ ((weak));
 
 /**
  * Notification that a LNCVProgrammingStart message was received. Application code should process this message and

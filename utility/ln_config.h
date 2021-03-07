@@ -54,6 +54,11 @@
 
 // John Plocher
 // figure out what board we are building for
+
+// Common defines
+#if defined(STM32F1)
+// no cbi/sbi for STM32F1
+#else
 // TODO:  Add support for Leo and others...
 #ifndef ESP8266
 #  ifdef PINL	//      For the Mega 2560 (should work with 1280, etc)
@@ -66,11 +71,21 @@
 #ifndef cbi
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #endif
+
 #ifndef sbi
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 #endif
+
 #endif
 
+#if defined(STM32F1)
+typedef uint32_t LnPortRegisterType;
+typedef uint32_t LnCompareTargetType;
+#else
+typedef uint8_t LnPortRegisterType;
+typedef uint16_t LnCompareTargetType;
+#endif
+typedef volatile LnPortRegisterType* LnPortAddrType;
 
 // Uncomment the #define LN_SW_UART_RX_INVERTED below to Invert the polarity of the RX Signal
 // Can be used with an interface with Serialport like behavior, Rx and Tx need to use the same logic level
@@ -86,13 +101,22 @@
 #  define LN_BIT_PERIOD               ((F_CPU / 16) / 16666)
 #  define LN_TIMER_TX_RELOAD_ADJUST   60
 #else
-#  define LN_BIT_PERIOD               (F_CPU / 16666)
+#  if defined(STM32F1)
+#    define LN_BIT_PERIOD               (rcc_apb1_frequency * 2 / 16666)
+#  else
+#    define LN_BIT_PERIOD               (F_CPU / 16666)
+#  endif
 #  define LN_TMR_PRESCALER              1
 #  define LN_TIMER_TX_RELOAD_ADJUST   106 //  14,4 us delay borrowed from FREDI sysdef.h
 #endif
+
+// Set LN_TX_ECHO to receive a copy of every transmitted message using LocoNet.receive()
+// Or set to 0 to suppress echos. Wrapped in #ifndef so it can be set on a per-build basis.
+#ifndef LN_TX_ECHO
+#define LN_TX_ECHO 1
+#endif
+
 #define LN_TX_RETRIES_MAX            25
-
-
 
 // *****************************************************************************
 // *                                                              Arduino MEGA *
@@ -179,6 +203,20 @@
 #define LN_TMR_COUNT_REG      TCNT1     // and replaced their occurence in
 #define LN_TMR_CONTROL_REG    TCCR1B    // the code.
 #define LN_INIT_COMPARATOR() { TCCR1A = 0; TCCR1B = 0x01; }    // no prescaler, normal mode
+
+#elif defined(STM32F1)
+
+#define LN_RX_PIN_NAME PB14
+#define LN_RX_PORT  (*portInputRegister(GPIOB))
+#define LN_RX_BIT   (14)
+
+#define LN_SB_SIGNAL          exti15_10_isr
+#define LN_TMR_SIGNAL         tim2_isr
+
+// Priority of the timer interrupt in hardware. If an OS is used and OS calls
+// are made from notifyLnByteReceived, this may have to be adjusted to match
+// the OS expectations. See the OS manual for details.
+#define LN_TMR_ISR_PRIO ((configMAX_SYSCALL_INTERRUPT_PRIORITY) + 64)
 
 // *****************************************************************************
 // *                                                       Arduino --UNKNOWN-- *

@@ -56,11 +56,13 @@
  *****************************************************************************/
 
 #include <string.h>
-#ifndef ESP8266
-#  include <avr/interrupt.h>
+
+#if defined(ARDUINO) && ARDUINO >= 100
+#include "Arduino.h"
 #else
-#  include <Arduino.h>
+#include "WProgram.h"
 #endif
+
 #include "ln_buf.h"
 
 #define		LN_BUF_OPC_WRAP_AROUND	(uint8_t)0x00		// Special character to indcate a buffer wrap
@@ -125,7 +127,7 @@ lnMsg *recvLnMsg( LnBuf *Buffer )
         // The packet won't fit in the remaing part of the buffer without wrapping
         // so we need to disable interrupts, update WriteIndex, enable interrupts,
         // move all the data and then fix the ReadIndexes.
-        cli();
+        noInterrupts();
         // Take a copy of the WriteIndex for later when we move the data
         lastWriteIndex = Buffer->WriteIndex ;
 
@@ -135,7 +137,7 @@ lnMsg *recvLnMsg( LnBuf *Buffer )
           Buffer->WriteIndex = Buffer->WriteIndex + tempSize ;
 
         // Enable interrupts again so we can receive more data etc
-        sei();
+        interrupts();
 
         // First check if we have to move new data at the buginning of
         // the buffer to make room for the data at the end of the buffer

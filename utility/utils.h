@@ -48,6 +48,9 @@
 
 #include "ln_opc.h"
 
+#ifndef _LN_UTILS_INCLUDED
+#define _LN_UTILS_INCLUDED
+
 #if defined (__cplusplus)
 	extern "C" {
 #endif
@@ -58,3 +61,5 @@ void encodePeerData( peerXferMsg *pMsg, uint8_t *pData ) ;
 #if defined (__cplusplus)
 }
 #endif
+
+#endif // _LN_UTILS_INCLUDED

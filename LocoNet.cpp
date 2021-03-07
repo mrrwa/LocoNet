@@ -1,6 +1,6 @@
 /****************************************************************************
  * 	Copyright (C) 2009..2013 Alex Shepherd
- *	Copyright (C) 2013 Damian Philipp
+ *	Copyright (C) 2020 Damian Philipp
  * 
  * 	Portions Copyright (C) Digitrax Inc.
  *	Portions Copyright (C) Uhlenbrock Elektronik GmbH
@@ -83,6 +83,11 @@ uint8_t eeprom_read_byte(const uint8_t* offset) {
 void eeprom_write_byte(const uint8_t* offset, uint8_t value) {
   EEPROM.write((int)offset, value);
 }
+#elif defined(STM32F1)
+#include <FreeRTOS.h>
+#include <task.h>
+#include <libopencm3/stm32/gpio.h>
+#include <cstdint>
 #else
 #include <avr/eeprom.h>
 #include <avr/wdt.h>
@@ -134,20 +139,27 @@ void LocoNetClass::init(uint8_t txPin)
 
 void LocoNetClass::setTxPin(uint8_t txPin)
 {
+//#if defined(STM32F1) && !defined(__ARDUINO__)
+{
+//  uint16_t bitNum = 15;
+//  gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_2_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, (1 << bitNum));  // LN TX
+//  LnPortRegisterType out = GPIOB; // TODO: This shold be configurable..
+}
+//#else
   pinMode(txPin, OUTPUT);
 
 #ifndef ESP8266
 	// Not figure out which Port bit is the Tx Bit from the Arduino pin number
-  uint8_t bitMask = digitalPinToBitMask(txPin);
-  uint8_t bitMaskTest = 0x01;
-  uint8_t bitNum = 0;
+  LnPortRegisterType bitMask = digitalPinToBitMask(txPin);
+  LnPortRegisterType bitMaskTest = 0x01;
+  LnPortRegisterType bitNum = 0;
   
-  uint8_t port = digitalPinToPort(txPin);
-  volatile uint8_t *out = portOutputRegister(port);
+  LnPortRegisterType port = digitalPinToPort(txPin);
+  LnPortAddrType out = portOutputRegister(port);
   
   while(bitMask != bitMaskTest)
 	bitMaskTest = 1 << ++bitNum;
-	
+
   setTxPortAndPin(out, bitNum);
 #else
   setTxPortAndPin(nullptr, txPin);
@@ -155,7 +167,7 @@ void LocoNetClass::setTxPin(uint8_t txPin)
 }
 
 // Check to see if any messages is ready to receive()?
-boolean LocoNetClass::available(void)
+bool LocoNetClass::available(void)
 {
   return lnPacketReady(&LnBuffer);
 }
@@ -539,8 +551,8 @@ LN_STATUS LocoNetClass::reportSwitch( uint16_t Address )
 
 LN_STATUS LocoNetClass::reportSensor( uint16_t Address, uint8_t State )
 {
-	byte AddrH = ( (--Address >> 8) & 0x0F ) | OPC_INPUT_REP_CB ;
-	byte AddrL = ( Address >> 1 ) & 0x7F ;
+	uint8_t AddrH = ( (--Address >> 8) & 0x0F ) | OPC_INPUT_REP_CB ;
+	uint8_t AddrL = ( Address >> 1 ) & 0x7F ;
 	if( Address % 2)
 		AddrH |= OPC_INPUT_REP_SW ;
 
@@ -1257,7 +1269,7 @@ TH_SPEED_STEPS LocoNetThrottleClass::getSpeedSteps(void)
   return mySpeedSteps;
 }
 
-TH_ERROR LocoNetThrottleClass::setSpeedSteps(TH_SPEED_STEPS newSpeedSteps)
+void LocoNetThrottleClass::setSpeedSteps(TH_SPEED_STEPS newSpeedSteps)
 {
   mySpeedSteps = newSpeedSteps;
   if((myState == TH_ST_IN_USE) && ((myStatus1 & 0x07) != mySpeedSteps))
@@ -1411,6 +1423,10 @@ void LocoNetFastClockClass::process66msActions(void)
     fcState = FC_ST_REQ_TIME ;
   }
 }
+
+#if defined(STM32F1)
+// STM31F1 has no EEPROM.
+#else
 
 void LocoNetSystemVariableClass::init(uint8_t newMfgId, uint8_t newDevId, uint16_t newProductId, uint8_t newSwVersion)
 {
@@ -1699,6 +1715,9 @@ SV_STATUS LocoNetSystemVariableClass::doDeferredProcessing( void )
   return SV_OK ;
 }
 
+#endif // STM32F1
+
+
  /*****************************************************************************
  *	DESCRIPTION
  *	This module provides functions that manage the LNCV-specifiv programming protocol
@@ -1779,7 +1798,7 @@ uint8_t LocoNetCVClass::processLNCVMessage(lnMsg * LnPacket) {
 	switch (LnPacket->sr.command) {
 	case OPC_IMM_PACKET:
 	case OPC_PEER_XFER:
-		Serial.println("Possibly a LNCV message.");
+		DEBUG("Possibly a LNCV message.");
 		// Either of these message types may be a LNCV message
 		// Sanity check: Message length, Verify addresses
 		if (LnPacket->ub.mesg_size == 15 && LnPacket->ub.DSTL == LNCV_MODULE_DSTL && LnPacket->ub.DSTH == LNCV_MODULE_DSTH) {
