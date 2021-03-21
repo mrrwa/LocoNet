@@ -390,11 +390,12 @@ void initLocoNetHardware(LnBuf * RxBuffer)
 	lnRxBuffer = RxBuffer;
 
 	// Set the RX line to Input
-
 #if defined(ESP8266)
 	pinMode(LN_RX_PORT, INPUT);
-#else
+#elif defined(STM32F1)
 	pinMode(LN_RX_PIN_NAME, INPUT);
+#else
+	cbi(LN_RX_DDR, LN_RX_BIT);
 #endif
 
 	// Set the TX line to Inactive
@@ -403,7 +404,6 @@ void initLocoNetHardware(LnBuf * RxBuffer)
 #if defined(ESP8266)
 	timer1_detachInterrupt();
 	timer1_enable(TIM_DIV16, TIM_EDGE, TIM_SINGLE);
-
 #elif defined(STM32F1)
 	// === Setup the timer ===
 
