@@ -129,6 +129,8 @@ typedef volatile LnPortRegisterType* LnPortAddrType;
 #define LN_SB_INT_ENABLE_BIT  ICIE5
 #define LN_SB_INT_STATUS_REG  TIFR5
 #define LN_SB_INT_STATUS_BIT  ICF5
+#define LN_SB_EDGE_CFG_REG	  TCCR5B // Timer/Counter5 Control Register B	
+#define LN_SB_EDGE_BIT		  ICES5  // Input Capture Edge Select
 #define LN_TMR_SIGNAL         TIMER5_COMPA_vect
 #define LN_TMR_INT_ENABLE_REG TIMSK5
 #define LN_TMR_INT_STATUS_REG TIFR5
