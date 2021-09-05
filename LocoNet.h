@@ -133,6 +133,7 @@ public:
 	LN_STATUS   send(lnMsg* TxPacket);
 	LN_STATUS   send(lnMsg* TxPacket, uint8_t PrioDelay);
 	LN_STATUS   send(uint8_t OpCode, uint8_t Data1, uint8_t Data2);
+	LN_STATUS   send(uint8_t OpCode, uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t Data4 );
 	LN_STATUS   send(uint8_t OpCode, uint8_t Data1, uint8_t Data2, uint8_t PrioDelay);
 	LN_STATUS   sendLongAck(uint8_t ucCode);
 
@@ -201,6 +202,10 @@ private:
 	uint8_t		   myStatus1;       // Stat1
 	uint8_t		   myDirFunc0to4;   // Direction
 	uint8_t		   myFunc5to8;       // Direction
+	uint8_t            myFunc9to11;
+	uint8_t            myFunc13to19 ; // without msb
+	uint8_t        myFunc12_20_28;
+	uint8_t            myFunc21to27 ;
 	uint8_t		   myUserData;
 	uint8_t		   myOptions;
 	uint32_t 	   myLastTimerMillis;
@@ -212,6 +217,11 @@ private:
 	void updateStatus1(uint8_t Status, uint8_t ForceNotify);
 	void updateDirectionAndFunctions(uint8_t DirFunc0to4, uint8_t ForceNotify);
 	void updateFunctions5to8(uint8_t Func5to8, uint8_t ForceNotify);
+	void updateFunctions9to11(uint8_t func9to11, uint8_t ForceNotify );
+	void updateFunctions13to19(uint8_t func13to19, uint8_t ForceNotify );
+	void updateFunction12_20_28(uint8_t func12_20_28, uint8_t ForceNotify );
+	void updateFunctions21to27(uint8_t Func21to27, uint8_t ForceNotify );
+	void updateFunctions9to12_Digikeijs(uint8_t func9to12, uint8_t ForceNotify ); // uses OPC_DIGIKEIJS_FUN
 	void updateSpeedSteps(TH_SPEED_STEPS SpeedSteps, uint8_t ForceNotify);
 
 public:
@@ -243,6 +253,8 @@ public:
 	TH_ERROR setFunction(uint8_t Function, uint8_t Value);
 	TH_ERROR setDirFunc0to4Direct(uint8_t Value);
 	TH_ERROR setFunc5to8Direct(uint8_t Value);
+	TH_ERROR setFunction9to28(uint8_t Function, uint8_t Value) ;
+	TH_ERROR resetAllFunctions() ;
 
 	TH_SPEED_STEPS getSpeedSteps(void);
 	void setSpeedSteps(TH_SPEED_STEPS newSpeedSteps);

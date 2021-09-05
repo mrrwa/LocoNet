@@ -255,6 +255,36 @@ LN_STATUS LocoNetClass::send(lnMsg* pPacket, uint8_t ucPrioDelay)
 }
 
 /*
+  Create an eight-byte LocoNet message from the three method parameters plus a
+  computed checksum, and send that message to LocoNet using a default priority
+  delay. TODO
+
+  When an attempt to send fails, this method will continue to try to re-send
+  the message until it is successfully sent or until the maximum retry
+  limit is reached.
+
+  Return value is one of:
+	LN_DONE -         Indicates successful send of the message
+	LN_RETRY_ERROR -  Could not successfully send the message within
+						LN_TX_RETRIES_MAX attempts
+	LN_UNKNOWN -      Indicates an abnormal exit condition for the send attempt.
+						In this case, it is recommended to make another send
+						attempt.
+*/
+LN_STATUS LocoNetClass::send( uint8_t OpCode, uint8_t Data1, uint8_t Data2, uint8_t Data3, uint8_t Data4 )
+{
+  lnMsg SendPacket ;
+
+  SendPacket.data[ 0 ] = OpCode ;
+  SendPacket.data[ 1 ] = Data1 ;
+  SendPacket.data[ 2 ] = Data2 ;
+  SendPacket.data[ 3 ] = Data3 ;
+  SendPacket.data[ 4 ] = Data4 ;
+
+  return send( &SendPacket ) ;
+}
+
+/*
   Create a four-byte LocoNet message from the three method parameters plus a
   computed checksum, and send that message to LocoNet using a default priority
   delay.
@@ -888,6 +918,135 @@ void LocoNetThrottleClass::processMessage(lnMsg* LnPacket)
 			updateState(TH_ST_FREE, 1);
 		}
 	}
+	else if( LnPacket->msdi.command == OPC_UHLI_FUN )
+  {
+    /* https://wiki.rocrail.net/doku.php?id=loconet:lnpe-parms-en */
+    /* 
+    arg1 0x20
+    arg2 slot#
+    arg3 0x07 (F9-F12) OR 0x05 (f12+f20+f28) OR (0x08=f13-f19) OR 0x09(F21-28)
+    arg4 f9=0x10, f10=0x20, f11=0x40 
+    arg4 f12=0x10, f20=0x20, f28=0x40, f13=0x01…f19=0x40
+    arg4 f21=0x01…f27=0x40 
+
+    #define ARG3_FUN_9to11 0x07
+    #define ARG3_FUN_12_20_28 0x05
+    #define ARG3_FUN_13to19 0x08
+    #define ARG3_FUN_21to27 0x09
+     */
+    if( (LnPacket->msdi.arg1 == 0x20) && (LnPacket->msdi.arg2 == mySlot))
+    {
+      switch (LnPacket->msdi.arg3)
+      {
+      case ARG3_FUN_9to11:
+        updateFunctions9to11(LnPacket->msdi.arg4, false);
+        break;
+      case ARG3_FUN_12_20_28:
+        updateFunction12_20_28(LnPacket->msdi.arg4, false);
+        break;
+      case ARG3_FUN_13to19:
+        updateFunctions13to19(LnPacket->msdi.arg4, false);
+        break;
+      case ARG3_FUN_21to27:
+        updateFunctions21to27(LnPacket->msdi.arg4, false );
+        break;
+      }
+    }
+  }
+  else if((LnPacket->ld.command == OPC_DIGIKEIJS_FUN) && (LnPacket->ld.slot == mySlot) ) updateFunctions9to12_Digikeijs(LnPacket->ld.data, false);
+}
+
+void LocoNetThrottleClass::updateFunction12_20_28(uint8_t func12_20_28, uint8_t ForceNotify )
+{
+  /* f12=0x10, f20=0x20, f28=0x40,  */
+
+  uint8_t Diffs ;
+  
+  if( ForceNotify || myFunc12_20_28 != func12_20_28 )
+  {
+    Diffs = myFunc12_20_28 ^ func12_20_28;
+    myFunc12_20_28=func12_20_28;
+
+    if( notifyThrottleFunction && (ForceNotify || (Diffs & 0x10 ))) notifyThrottleFunction( myUserData, 12, func12_20_28 & 0x10 ) ;
+    if( notifyThrottleFunction && (ForceNotify || (Diffs & 0x20 ))) notifyThrottleFunction( myUserData, 20, func12_20_28 & 0x20 ) ;
+    if( notifyThrottleFunction && (ForceNotify || (Diffs & 0x40 ))) notifyThrottleFunction( myUserData, 28, func12_20_28 & 0x40 ) ;
+  }
+}
+
+void LocoNetThrottleClass::updateFunctions9to12_Digikeijs(uint8_t func9to12, uint8_t ForceNotify )
+{
+  /* OPC_DIGIKEIJS_FUN f9=0x01, f10=0x02, f11=0x04, f12=0x08*/
+
+  updateFunctions9to11( ((uint8_t) 0x7F & (func9to12<<4)), ForceNotify ); // shift by 4 as f9=0x10 for OPC_UHLI_FUN and remove f12
+
+  updateFunction12_20_28( ( (myFunc12_20_28 & (uint8_t) (~0x10)) | (((uint8_t) 0x8 & func9to12)<<1) ), ForceNotify ); // f12=0x10
+}
+
+void LocoNetThrottleClass::updateFunctions9to11(uint8_t func9to11, uint8_t ForceNotify )
+{
+  /*f9=0x10, f10=0x20, f11=0x40*/
+  uint8_t Diffs ;
+  uint8_t Function ;
+  uint8_t Mask ;
+
+  if( ForceNotify || myFunc9to11 != func9to11 )
+  {
+    Diffs = myFunc9to11 ^ func9to11 ;
+    myFunc9to11 = func9to11 ;
+
+    // Check Functions 9 to 12
+    for( Function = 9, Mask = 0x10; Function <= 11; Function++ )
+    {
+      if( notifyThrottleFunction && (ForceNotify || Diffs & Mask ))
+        notifyThrottleFunction( myUserData, Function, func9to11 & Mask ) ;
+
+      Mask <<= 1 ;
+    }
+  }
+}
+
+void LocoNetThrottleClass::updateFunctions13to19(uint8_t func13to19, uint8_t ForceNotify )
+{
+  uint8_t Diffs ;
+  uint8_t Function ;
+  uint8_t Mask ;
+
+  if( ForceNotify || myFunc13to19 != func13to19 )
+  {
+    Diffs = myFunc13to19 ^ func13to19 ;
+    myFunc13to19 = func13to19 ;
+
+    // Check Functions 13 to 19
+    for( Function = 13, Mask = 1; Function <= 19; Function++ )
+    {
+      if( notifyThrottleFunction && (ForceNotify || Diffs & Mask ))
+        notifyThrottleFunction( myUserData, Function, func13to19 & Mask ) ;
+
+      Mask <<= 1 ;
+    }
+  }
+}
+
+void LocoNetThrottleClass::updateFunctions21to27(uint8_t Func21to27, uint8_t ForceNotify )
+{
+  uint8_t Diffs ;
+  uint8_t Function ;
+  uint8_t Mask ;
+
+  if( ForceNotify || myFunc21to27 != Func21to27 )
+  {
+    Diffs = myFunc21to27 ^ Func21to27 ;
+    myFunc21to27 = Func21to27 ;
+
+    // Check Functions 21 to 27
+    for( Function = 21, Mask = 1; Function <= 27; Function++ )
+    {
+      if( notifyThrottleFunction && (ForceNotify || Diffs & Mask ))
+        notifyThrottleFunction( myUserData, Function, Func21to27 & Mask ) ;
+
+      Mask <<= 1 ;
+    }
+  }
 }
 
 uint16_t LocoNetThrottleClass::getAddress(void)
@@ -1129,7 +1288,11 @@ TH_ERROR LocoNetThrottleClass::setFunction(uint8_t Function, uint8_t Value)
 
 	if (myState == TH_ST_IN_USE)
 	{
-		if (Function <= 4)
+		if (Function >=9)
+		{
+			return setFunction9to28(Function, Value );
+		}
+		else if (Function <= 4)
 		{
 			OpCode = OPC_LOCO_DIRF;
 			Data = myDirFunc0to4;
@@ -1156,6 +1319,103 @@ TH_ERROR LocoNetThrottleClass::setFunction(uint8_t Function, uint8_t Value)
 	if (notifyThrottleError)
 		notifyThrottleError(myUserData, TH_ER_NOT_SELECTED);
 	return TH_ER_NOT_SELECTED;
+}
+
+TH_ERROR LocoNetThrottleClass::resetAllFunctions()
+{
+  if( myState == TH_ST_IN_USE )
+  {
+    if(myDirFunc0to4 & 0x0F) setDirFunc0to4Direct( myDirFunc0to4 & 0xf0 & (~DIRF_F0));
+    if(myFunc5to8 & 0x0F) setFunc5to8Direct(0 );
+    if(myFunc12_20_28 & 0x70) LocoNet.send( OPC_UHLI_FUN, 0x20, mySlot, ARG3_FUN_12_20_28, 0 );
+    if(myFunc9to11 & 0x70) LocoNet.send( OPC_UHLI_FUN, 0x20, mySlot, ARG3_FUN_9to11, 0 );
+    if(myFunc13to19 & 0x7F) LocoNet.send( OPC_UHLI_FUN, 0x20, mySlot, ARG3_FUN_13to19, 0 );
+    if(myFunc21to27 & 0x7F) LocoNet.send( OPC_UHLI_FUN, 0x20, mySlot, ARG3_FUN_21to27, 0 );
+    
+	myTicksSinceLastAction = 0 ;
+	return TH_ER_OK ;
+  }
+
+  if(notifyThrottleError)
+	notifyThrottleError( myUserData, TH_ER_NOT_SELECTED ) ;
+  return TH_ER_NOT_SELECTED ;
+}
+
+TH_ERROR LocoNetThrottleClass::setFunction9to28(uint8_t Function, uint8_t Value )
+{
+  uint8_t Mask ;
+  uint8_t Data ;
+
+  if( myState == TH_ST_IN_USE )
+  {
+      /* https://wiki.rocrail.net/doku.php?id=loconet:lnpe-parms-en */
+      /* 
+      arg1 0x20
+      arg2 slot#
+      arg3 0x07 (F9-F11) OR 0x05 (f12+f20+f28) OR (0x08=f13-f19) OR 0x09(F21-27)
+      arg4 f9=0x10, f10=0x20, f11=0x40 
+      arg4 f12=0x10, f20=0x20, f28=0x40, f13=0x01…f19=0x40
+      arg4 f21=0x01…f27=0x40 
+
+      #define ARG3_FUN_9to11 0x07
+      #define ARG3_FUN_12_20_28 0x05
+      #define ARG3_FUN_13to19 0x08
+      #define ARG3_FUN_21to27 0x09
+     */
+      uint8_t arg3;
+
+      if(Function<12)
+      {
+        /* 9-12 */
+        arg3=ARG3_FUN_9to11;
+        Data = myFunc9to11 ;
+        Mask = (uint8_t)(0x10 << (Function - 9)) ;
+      }
+
+      else if ((Function==12))
+      {
+        /* 12 */
+        arg3=ARG3_FUN_12_20_28;
+        Data = myFunc12_20_28 ;
+        Mask = (uint8_t)(0x10) ;
+      }
+      
+      else if ((Function==20) || (Function==28))
+      {
+        /* 20 */
+        arg3=ARG3_FUN_12_20_28;
+        Data = myFunc12_20_28 ;
+        Mask = (uint8_t)(0x20 << ((Function - 28)?0:1)) ;
+      }
+      else if (Function <= 19)
+      {
+        /* 13 - 19 */
+        arg3=ARG3_FUN_13to19;
+        Data = myFunc13to19 ;
+        Mask = (uint8_t)(0x01 << (Function - 13)) ;
+      }
+      else if (Function <=27)
+      {
+        /* 21-28 */
+        arg3=ARG3_FUN_21to27;
+        Data = myFunc21to27 ;
+        Mask = (uint8_t)(0x01 << (Function - 21)) ;
+      }
+
+      if( Value )
+      Data |= Mask ;
+      else
+        Data &= (uint8_t)~Mask ;
+
+      LocoNet.send( OPC_UHLI_FUN, 0x20, mySlot, arg3, Data );
+
+    myTicksSinceLastAction = 0 ;
+    return TH_ER_OK ;
+  }
+
+  if(notifyThrottleError)
+	notifyThrottleError( myUserData, TH_ER_NOT_SELECTED ) ;
+  return TH_ER_NOT_SELECTED ;
 }
 
 TH_ERROR LocoNetThrottleClass::setDirFunc0to4Direct(uint8_t Value)

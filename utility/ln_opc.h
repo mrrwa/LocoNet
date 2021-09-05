@@ -689,6 +689,17 @@ extern "C" {
 #define OPC_WR_SL_DATA    0xef
 #define OPC_MASK          0x7f  /* mask for acknowledge opcodes */
 
+/* functions F9 to F28 */
+/* opcodes */
+/* https://wiki.rocrail.net/doku.php?id=loconet:lnpe-parms-en */
+#define OPC_UHLI_FUN      0xD4
+#define OPC_DIGIKEIJS_FUN 0xA3
+/* arg3 */
+#define ARG3_FUN_9to11 0x07
+#define ARG3_FUN_12_20_28 0x05
+#define ARG3_FUN_13to19 0x08
+#define ARG3_FUN_21to27 0x09
+
 #if defined (__cplusplus)
 }
 #endif
