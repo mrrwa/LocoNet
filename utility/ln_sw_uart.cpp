@@ -496,7 +496,7 @@ void initLocoNetHardware(LnBuf * RxBuffer)
 	//Clear StartBit Interrupt flag
 	LN_CLEAR_START_BIT_FLAG();
 	//Enable StartBit Interrupt
-	LN_CLEAR_START_BIT_FLAG();
+	LN_ENABLE_START_BIT_INTERRUPT();
 
 	//Set rising edge for StartBit if signal is inverted
 #  ifdef LN_SW_UART_RX_INVERTED  
