@@ -192,6 +192,9 @@ ISR(LN_SB_SIGNAL)
 	// Reset the bit counter so that on first increment it is on 0
 	lnBitCount = 0;
 
+	// Next bit is startbit
+	checkStartBit=true;
+
 #if defined(ESP8266)
 	// Must clear this bit in the interrupt register,
 	// it gets set even when interrupts are disabled
@@ -228,6 +231,29 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 	LN_TMR_OUTP_CAPT_REG = lnCompareTarget;
 #  endif
 #endif
+
+	// Check if there is really a start bit or just a glitch
+	if (checkStartBit) {
+		checkStartBit = false;
+		if (bit_is_set(LN_RX_PORT, LN_RX_BIT)) {
+		  lnState = LN_ST_CD_BACKOFF;
+#if defined(ESP8266)
+		   // Enable the pin interrupt
+#ifdef LN_SW_UART_RX_INVERTED
+		   attachInterrupt(digitalPinToInterrupt(LN_RX_PORT), ln_esp8266_pin_isr, RISING);
+#else
+		   attachInterrupt(digitalPinToInterrupt(LN_RX_PORT), ln_esp8266_pin_isr, FALLING);
+#endif
+#else
+		   // Clear the Start Bit Interrupt Status Flag and Enable ready to
+		   // detect the next Start Bit
+		   LN_CLEAR_START_BIT_FLAG();
+		   LN_ENABLE_START_BIT_INTERRUPT();
+#endif
+		}
+		return;
+	}
+
 	lnBitCount++;                // Increment bit_counter
 
 	if (lnState == LN_ST_RX) {  // Are we in RX mode
