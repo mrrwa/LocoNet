@@ -152,7 +152,8 @@
 
 // The Start Bit period is a full bit period + half of the next bit period
 // so that the bit is sampled in middle of the bit
-#define LN_TIMER_RX_START_PERIOD    LN_BIT_PERIOD + (LN_BIT_PERIOD / 2)
+//#define LN_TIMER_RX_START_PERIOD    LN_BIT_PERIOD + (LN_BIT_PERIOD / 2)
+#define LN_TIMER_RX_START_PERIOD    LN_BIT_PERIOD / 2 // Read Startbit to make sure we are not started by a glitch
 #define LN_TIMER_RX_RELOAD_PERIOD   LN_BIT_PERIOD 
 #define LN_TIMER_TX_RELOAD_PERIOD   LN_BIT_PERIOD 
 
