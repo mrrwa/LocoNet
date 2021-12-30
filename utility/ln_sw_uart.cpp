@@ -238,7 +238,11 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 	// Check if there is really a start bit or just a glitch
 	if (checkStartBit) {
 		checkStartBit = false;
+#ifdef LN_SW_UART_RX_INVERTED
+		if (bit_is_clear(LN_RX_PORT, LN_RX_BIT)) {
+#else
 		if (bit_is_set(LN_RX_PORT, LN_RX_BIT)) {
+#endif
 		  lnState = LN_ST_CD_BACKOFF;
 #if defined(ESP8266)
 		   // Enable the pin interrupt
