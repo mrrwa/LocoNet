@@ -73,6 +73,8 @@ volatile uint8_t  lnBitCount;
 volatile uint8_t  lnCurrentByte;
 volatile LnCompareTargetType lnCompareTarget;
 
+bool checkStartBit = false;
+
 LnBuf* lnRxBuffer;
 volatile lnMsg* volatile lnTxData;
 volatile uint8_t  lnTxIndex;
@@ -191,6 +193,10 @@ ISR(LN_SB_SIGNAL)
 
 	// Reset the bit counter so that on first increment it is on 0
 	lnBitCount = 0;
+	
+	// Next Bit ist Startbit
+	checkStartBit=true;
+
 
 #if defined(ESP8266)
 	// Must clear this bit in the interrupt register,
@@ -228,6 +234,33 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 	LN_TMR_OUTP_CAPT_REG = lnCompareTarget;
 #  endif
 #endif
+
+	// Check if there is really a start bit or just a glitch
+	if (checkStartBit) {
+		checkStartBit = false;
+#ifdef LN_SW_UART_RX_INVERTED
+		if (bit_is_clear(LN_RX_PORT, LN_RX_BIT)) {
+#else
+		if (bit_is_set(LN_RX_PORT, LN_RX_BIT)) {
+#endif
+		  lnState = LN_ST_CD_BACKOFF;
+#if defined(ESP8266)
+		   // Enable the pin interrupt
+#ifdef LN_SW_UART_RX_INVERTED  
+		   attachInterrupt(digitalPinToInterrupt(LN_RX_PORT), ln_esp8266_pin_isr, RISING);
+#else
+		   attachInterrupt(digitalPinToInterrupt(LN_RX_PORT), ln_esp8266_pin_isr, FALLING);
+#endif
+#else
+		   // Clear the Start Bit Interrupt Status Flag and Enable ready to 
+		   // detect the next Start Bit
+		   LN_CLEAR_START_BIT_FLAG();
+		   LN_ENABLE_START_BIT_INTERRUPT();
+#endif
+		}
+		return;
+	}
+	
 	lnBitCount++;                // Increment bit_counter
 
 	if (lnState == LN_ST_RX) {  // Are we in RX mode
