@@ -92,7 +92,7 @@ typedef volatile LnPortRegisterType* LnPortAddrType;
 #define LN_SW_UART_TX_INVERTED
 
 #ifdef ESP8266
-#  define LN_BIT_PERIOD               ((F_CPU / 16) / 16666)
+#  define LN_BIT_PERIOD               4720  //((F_CPU / 16) / 16666) //PG: 11.01.2022 correct ESP speed --> CPU Frequenz != Timer Frequenz!!!
 #  define LN_TIMER_TX_RELOAD_ADJUST   60
 #else
 #  if defined(STM32F1)
