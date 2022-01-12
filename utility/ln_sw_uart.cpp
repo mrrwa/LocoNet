@@ -436,7 +436,7 @@ void initLocoNetHardware(LnBuf * RxBuffer)
 
 #if defined(ESP8266)
 	timer1_detachInterrupt();
-	timer1_enable(TIM_DIV16, TIM_EDGE, TIM_SINGLE);
+	timer1_enable(TIM_DIV1, TIM_EDGE, TIM_SINGLE);	//remove divider to make timing more accurate
 #elif defined(STM32F1)
 	// === Setup the timer ===
 
