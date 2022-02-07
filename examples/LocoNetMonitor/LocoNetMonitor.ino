@@ -96,3 +96,46 @@ void notifySwitchState( uint16_t Address, uint8_t Output, uint8_t Direction ) {
   Serial.println(Output ? "On" : "Off");
 }
 
+// This call-back function is called from LocoNet.processSwitchSensorMessage
+// for all Power messages
+void notifyPower(uint8_t State) {
+  Serial.print("Layout Power State: ");
+  Serial.println(State ? "On" : "Off");
+}
+
+// This call-back function is called from LocoNet.processSwitchSensorMessage
+// for all MultiSensePower messages
+void notifyMultiSensePower(uint8_t BoardID, uint8_t Subdistrict, uint8_t Mode, uint8_t Direction) {
+  Serial.print("MultiSensePower: Board ID: ");
+  Serial.print(BoardID, DEC);
+  Serial.print(" Sub District: ");
+  Serial.print(Subdistrict, DEC);
+  Serial.print(" Mode: ");
+  Serial.print(Mode, DEC);
+  Serial.print(" Direction: ");
+  Serial.println(Direction, DEC);
+}
+
+// This call-back function is called from LocoNet.processSwitchSensorMessage
+// for all notifyMultiSenseTransponder messages
+void notifyMultiSenseTransponder(uint16_t Address, uint8_t Zone, uint16_t LocoAddress, uint8_t Present) {
+  Serial.print("MultiSenseTransponder: Address: ");
+  Serial.print(Address, DEC);
+  Serial.print(" Zone: ");
+  Serial.print(Zone, DEC);
+  Serial.print(" Loco Address: ");
+  Serial.print(LocoAddress, DEC);
+  Serial.print(" Present: ");
+  Serial.println(Present, DEC);
+}
+
+// This call-back function is called from LocoNet.processSwitchSensorMessage
+// for all LongAck messages
+
+void notifyLongAck(uint8_t d1, uint8_t d2) {
+  Serial.print("LongACK : Data Byte 1: ");
+  Serial.print(d1, DEC);
+  Serial.print(" Data Byte 2: ");
+  Serial.println(d2, DEC);
+
+}
