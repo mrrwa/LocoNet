@@ -1841,7 +1841,7 @@ uint8_t LocoNetCVClass::processLNCVMessage(lnMsg* LnPacket) {
 					DEBUG("LNCV read: ");
 					if (notifyLNCVread) {
 						DEBUG(" executing...");
-						int8_t returnCode(notifyLNCVread(LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvNumber, LnPacket->ub.payload.data.lncvValue, LnPacket->ub.payload.data.lncvValue));
+						int8_t returnCode(notifyLNCVread(LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvNumber, LnPacket->ub.payload.data.lncvValue));
 						if (returnCode == LNCV_LACK_OK) {
 							// return the read value
 							makeLNCVresponse(response.ub, LnPacket->ub.SRC, LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvNumber, LnPacket->ub.payload.data.lncvValue, 0x00); // TODO: D7 was 0x80 here, but spec says that it is unused.
