@@ -41,9 +41,13 @@
 #ifndef _LN_SW_UART_INCLUDED
 #define _LN_SW_UART_INCLUDED
 
+#include "ln_config.h"
+
+#if !defined(LOCONET_NO_SW_UART)
+
 #ifdef ESP8266
 #  include <Arduino.h>
-#elif !defined(STM32F1)
+#elif defined(__AVR__)
 #  include <avr/io.h>
 #  include <avr/interrupt.h>
 #endif
@@ -182,4 +186,7 @@ void ICACHE_RAM_ATTR ln_esp8266_pin_isr();
 void ICACHE_RAM_ATTR ln_esp8266_timer1_isr();
 #endif
 
+#else
+LN_STATUS sendLocoNetPacketTry(lnMsg* TxData, unsigned char ucPrioDelay);
+#endif //!defined(LOCONET_NO_SW_UART)
 #endif

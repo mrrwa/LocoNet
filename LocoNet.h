@@ -120,21 +120,24 @@ class LocoNetClass
 {
 private:
 	LnBuf LnBuffer;
+#if !defined(LOCONET_NO_SW_UART)	
 	void 		setTxPin(uint8_t txPin);
-
+#endif
+  
 public:
 	LocoNetClass();
 
 	void        init(void);
 	void        init(uint8_t txPin);
-	bool 		available(void);
+	bool        available(void);
 	uint8_t			length(void);
-	lnMsg* receive(void);
+	lnMsg*      receive(void);
 	LN_STATUS   send(lnMsg* TxPacket);
 	LN_STATUS   send(lnMsg* TxPacket, uint8_t PrioDelay);
 	LN_STATUS   send(uint8_t OpCode, uint8_t Data1, uint8_t Data2);
 	LN_STATUS   send(uint8_t OpCode, uint8_t Data1, uint8_t Data2, uint8_t PrioDelay);
 	LN_STATUS   sendLongAck(uint8_t ucCode);
+        void        addToBuffer(uint8_t newByte);
 
 	LnBufStats* getStats(void);
 

@@ -72,6 +72,7 @@
 #include "ln_config.h"
 #include "utils.h"
 
+#if !defined(LOCONET_NO_EEPROM)
 #if defined(ESP8266)
 #  include <EEPROM.h>
 #  define E2END 0x1FF // Simulate 512 byte EEPROM
@@ -92,6 +93,7 @@ void eeprom_write_byte(const uint8_t* offset, uint8_t value) {
 #  include <avr/eeprom.h>
 #  include <avr/wdt.h>
 #endif
+#endif //LOCONET_NO_EEPROM
 
 const char* LoconetStatusStrings[] = {
 	"CD Backoff",
@@ -124,18 +126,24 @@ const char* LocoNetClass::getStatusStr(LN_STATUS Status)
 	return "Invalid Status";
 }
 
-
 void LocoNetClass::init(uint8_t txPin)
 {
 	initLnBuf(&LnBuffer);
-	setTxPin(txPin);
+#if !defined(LOCONET_NO_SW_UART)	
+  setTxPin(txPin);
 	initLocoNetHardware(&LnBuffer);
-
-#ifdef ESP8266
+#endif
+  
+#if defined(ESP8266) && !defined(LOCONET_NO_EEPROM)
 	// Setup EEProm emulation on EPS8266
 	EEPROM.begin(E2END);
 #endif
 }
+
+// another way to init LocoNetClass, in case you don't use the embedded UART communication
+// this can help e.g. on Platforms like ESP32 to use a Bluetooth Serial port or a socket communication
+
+#if !defined(LOCONET_NO_SW_UART)	
 
 void LocoNetClass::setTxPin(uint8_t txPin)
 {
@@ -148,7 +156,7 @@ void LocoNetClass::setTxPin(uint8_t txPin)
 	//#else
 	pinMode(txPin, OUTPUT);
 
-#ifndef ESP8266
+#if defined(STM32F1) || defined(__AVR__)
 	// Not figure out which Port bit is the Tx Bit from the Arduino pin number
 	LnPortRegisterType bitMask = digitalPinToBitMask(txPin);
 	LnPortRegisterType bitMaskTest = 0x01;
@@ -161,10 +169,11 @@ void LocoNetClass::setTxPin(uint8_t txPin)
 		bitMaskTest = 1 << ++bitNum;
 
 	setTxPortAndPin(out, bitNum);
-#else
+#elif defined(ESP8266)
 	setTxPortAndPin(nullptr, txPin);
 #endif
 }
+#endif
 
 // Check to see if any messages is ready to receive()?
 bool LocoNetClass::available(void)
@@ -187,6 +196,12 @@ uint8_t LocoNetClass::length(void)
 lnMsg* LocoNetClass::receive(void)
 {
 	return recvLnMsg(&LnBuffer);
+}
+
+// may be called to forwared data from an external communication channel, e.g. ESP32 bluetooth serial or socket
+void LocoNetClass::addToBuffer(uint8_t newByte)
+{
+	addByteLnBuf(&LnBuffer, newByte);
 }
 
 /*
@@ -1426,8 +1441,8 @@ void LocoNetFastClockClass::process66msActions(void)
 	}
 }
 
-#if defined(STM32F1)
-// STM31F1 has no EEPROM.
+#if defined(LOCONET_NO_EEPROM)
+// EEPROM support is disabled, e.g. for STM31F1 has no EEPROM.
 #else
 
 void LocoNetSystemVariableClass::init(uint8_t newMfgId, uint8_t newDevId, uint16_t newProductId, uint8_t newSwVersion)
@@ -1717,7 +1732,7 @@ SV_STATUS LocoNetSystemVariableClass::doDeferredProcessing(void)
 	return SV_OK;
 }
 
-#endif // STM32F1
+#endif // LOCONET_NO_EEPROM
 
 
 /*****************************************************************************
