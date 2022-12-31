@@ -1445,6 +1445,15 @@ uint8_t LocoNetSystemVariableClass::readSVStorage(uint16_t Offset)
 {
 	uint8_t retValue;
 
+	if (notifySVRead)
+	{
+		//if handled by callback, the callback must return true
+		if(notifySVRead(Offset, retValue))
+		{
+			return retValue;
+		}
+	}
+
 	if (Offset == SV_ADDR_EEPROM_SIZE)
 #if (E2END==0x0FF)	/* E2END is defined in processor include */
 		return SV_EE_SZ_256;
@@ -1472,6 +1481,17 @@ uint8_t LocoNetSystemVariableClass::readSVStorage(uint16_t Offset)
 
 uint8_t LocoNetSystemVariableClass::writeSVStorage(uint16_t Offset, uint8_t Value)
 {
+	if (notifySVWrite)
+	{
+		//if handled by callback, the callback must return true
+		if(notifySVWrite(Offset, Value))
+		{
+			if (notifySVChanged)
+				notifySVChanged(Offset);
+			return Value;
+		}
+	}
+
 	Offset -= 2;      // Map SV Address to EEPROM Offset - Skip SV_ADDR_EEPROM_SIZE & SV_ADDR_SW_VERSION
 	if (eeprom_read_byte((uint8_t*)Offset) != Value)
 	{
@@ -1498,6 +1518,23 @@ bool LocoNetSystemVariableClass::CheckAddressRange(uint16_t startAddress, uint8_
 #endif    
 	while (Count != 0)
 	{
+		if (notifyCheckAddressRange)
+		{
+			bool bValidAddress = false;
+			if (notifyCheckAddressRange(startAddress, bValidAddress))
+			{
+				if (!bValidAddress)
+				{
+					LocoNet.sendLongAck(42); // report invalid SV address error
+					return 0;
+				}
+				//force next item in loop, address validation handled in callback
+				startAddress++;
+				Count--;
+				continue;
+			}
+		}
+			
 		if (!isSVStorageValid(startAddress))
 		{
 			LocoNet.sendLongAck(42); // report invalid SV address error
