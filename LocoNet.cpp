@@ -1487,7 +1487,7 @@ uint8_t LocoNetSystemVariableClass::writeSVStorage(uint16_t Offset, uint8_t Valu
 		if(notifySVWrite(Offset, Value))
 		{
 			if (notifySVChanged)
-				notifySVChanged(Offset + 2);
+				notifySVChanged(Offset);
 			return Value;
 		}
 	}
