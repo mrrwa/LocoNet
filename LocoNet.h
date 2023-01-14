@@ -96,6 +96,8 @@ typedef enum
 #define   LN_BACKOFF_INITIAL  (LN_BACKOFF_MIN + LN_INITIAL_PRIO_DELAY)  // for the first normal tx attempt
 #define   LN_BACKOFF_MAX      (LN_BACKOFF_INITIAL + 10)                 // lower priority is not supported
 
+#define LN_DEFERRED_SPEED_NOOP  -1
+
 //
 // LNCV error codes
 // Used by the LNCV callbacks to signal what kind of error has occurred.
@@ -192,12 +194,15 @@ class LocoNetThrottleClass
 {
 private:
 	TH_STATE	   myState;         // State of throttle
+	// Sometimes reduces frequency of sending speed update packets by deferring them to process100msActions(), and
+	// helps to automatically send a speed packet periodically, if no speed or function changes have been made for
+	// a certain duration (based on SLOT_REFRESH_TICKS), to prevent slot timeout.
 	uint16_t	   myTicksSinceLastAction;
 	uint16_t	   myThrottleId;		// Id of throttle
 	uint8_t		   mySlot;          // Master Slot index
 	uint16_t	   myAddress;       // Decoder Address
 	uint8_t		   mySpeed;         // Loco Speed
-	uint8_t		   myDeferredSpeed; // Deferred Loco Speed setting
+	int16_t		   myDeferredSpeed; // Deferred Loco Speed setting
 	uint8_t		   myStatus1;       // Stat1
 	uint8_t		   myDirFunc0to4;   // Direction
 	uint8_t		   myFunc5to8;       // Direction

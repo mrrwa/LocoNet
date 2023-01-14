@@ -702,12 +702,12 @@ void LocoNetThrottleClass::process100msActions(void)
 	{
 		myTicksSinceLastAction++;
 
-		if ((myDeferredSpeed) || (myTicksSinceLastAction > SLOT_REFRESH_TICKS))
+		bool isDeferredSpeedChanged = myDeferredSpeed > LN_DEFERRED_SPEED_NOOP;
+		if (isDeferredSpeedChanged || (myTicksSinceLastAction > SLOT_REFRESH_TICKS))
 		{
-			LocoNet.send(OPC_LOCO_SPD, mySlot, (myDeferredSpeed) ? myDeferredSpeed : mySpeed);
+			LocoNet.send(OPC_LOCO_SPD, mySlot, (isDeferredSpeedChanged) ? myDeferredSpeed : mySpeed);
 
-			if (myDeferredSpeed)
-				myDeferredSpeed = 0;
+			myDeferredSpeed = LN_DEFERRED_SPEED_NOOP;
 
 			myTicksSinceLastAction = 0;
 		}
@@ -718,7 +718,7 @@ void LocoNetThrottleClass::init(uint8_t UserData, uint8_t Options, uint16_t Thro
 {
 	myState = TH_ST_FREE;
 	myThrottleId = ThrottleId;
-	myDeferredSpeed = 0;
+	myDeferredSpeed = LN_DEFERRED_SPEED_NOOP;
 	myUserData = UserData;
 	myOptions = Options;
 }
@@ -1069,13 +1069,15 @@ TH_ERROR LocoNetThrottleClass::setSpeed(uint8_t Speed)
 		{
 			// Always defer any speed other than stop or em stop
 			if ((myOptions & TH_OP_DEFERRED_SPEED) &&
-				((Speed > 1) || (myTicksSinceLastAction == 0)))
+				(Speed > 1 || myTicksSinceLastAction == 0))
+			{
 				myDeferredSpeed = Speed;
+			}
 			else
 			{
 				LocoNet.send(OPC_LOCO_SPD, mySlot, Speed);
 				myTicksSinceLastAction = 0;
-				myDeferredSpeed = 0;
+				myDeferredSpeed = LN_DEFERRED_SPEED_NOOP;
 			}
 		}
 		return TH_ER_OK;
