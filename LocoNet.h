@@ -453,6 +453,8 @@ public:
 	 *
 	 * Parameters:
 	 *		Offset: The offset into the EEPROM. Despite the value being passed as 2 Bytes, only the lower byte is respected.
+	 * 
+	 * Fires notifySVRead(Offset, Value), to enable overriding SV read process. 
 	 *
 	 * Returns:
 	 *		A Byte containing the EEPROM size, the software version or contents of the EEPROM.
@@ -464,7 +466,8 @@ public:
 	 *
 	 * TODO: Writes to Offset 0 and 1 will cause data corruption.
 	 *
-	 * Fires notifySVChanged(Offset), if the value actually chaned.
+	 * Fires notifySVWrite(Offset, Value), to enable overriding SV write process.
+	 * Fires notifySVChanged(Offset), if the value actually changed.
 	 *
 	 * Returns:
 	 *		A Byte containing the new EEPROM value (even if unchanged).
@@ -550,6 +553,9 @@ extern "C" {
 
 	// System Variable notify Call-back functions
 	extern void notifySVChanged(uint16_t Offset) __attribute__((weak));
+	extern bool notifySVWrite(uint16_t Offset, uint8_t& Value) __attribute__((weak)); // Allow SV write override, return true if override was performed. false to handle to SV write in the LocoNetSystemVariableClass 
+	extern bool notifySVRead(uint16_t Offset, uint8_t& Value) __attribute__((weak)); // Allow SV read override, return true if override was performed. false to handle to SV read in the LocoNetSystemVariableClass 
+	extern bool notifyCheckAddressRange(uint16_t startAddress, bool& AddressAccepted) __attribute__((weak)); // Allow SV Address range override, return true if override was performed. false to handle to SV Address range in the LocoNetSystemVariableClass
 
 	// LNCV notify Call-back functions
 
