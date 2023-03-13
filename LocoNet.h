@@ -596,7 +596,7 @@ extern "C" {
 	 * return code >= 0 leads to a NACK being sent.
 	 * return code < 0 will result in no reaction.
 	 */
-	extern int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t, uint16_t& lncvValue) __attribute__((weak));
+	extern int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t& lncvValue) __attribute__((weak));
 
 	/**
 	 * Notification that a LNCV value should be written. Application code should process this message and
