@@ -555,6 +555,7 @@ extern "C" {
 	extern void notifySVChanged(uint16_t Offset) __attribute__((weak));
 	extern bool notifySVWrite(uint16_t Offset, uint8_t& Value) __attribute__((weak)); // Allow SV write override, return true if override was performed. false to handle to SV write in the LocoNetSystemVariableClass 
 	extern bool notifySVRead(uint16_t Offset, uint8_t& Value) __attribute__((weak)); // Allow SV read override, return true if override was performed. false to handle to SV read in the LocoNetSystemVariableClass 
+	extern void notifySVReconfigure() __attribute__((weak)); // Notify of reconfiguration
 	extern bool notifyCheckAddressRange(uint16_t startAddress, bool& AddressAccepted) __attribute__((weak)); // Allow SV Address range override, return true if override was performed. false to handle to SV Address range in the LocoNetSystemVariableClass
 
 	// LNCV notify Call-back functions
