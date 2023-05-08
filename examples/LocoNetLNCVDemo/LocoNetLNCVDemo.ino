@@ -108,8 +108,7 @@ void dumpPacket(UhlenbrockMsg & ub) {
 	 * and "Programming Mode" state), it is not possible to distinguish
 	 * a read request from a programming start request message.
 	 */
-int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t,
-		uint16_t & lncvValue) {
+int8_t notifyLNCVread(uint16_t ArtNr, uint16_t lncvAddress, uint16_t & lncvValue) {
 	Serial.print("Enter notifyLNCVread(");
 	Serial.print(ArtNr, HEX);
 	Serial.print(", ");
