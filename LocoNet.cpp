@@ -1711,6 +1711,10 @@ SV_STATUS LocoNetSystemVariableClass::processMessage(lnMsg* LnPacket)
 
 	if (LnPacket->sv.sv_cmd == (SV_RECONFIGURE | 0x40))
 	{
+		if (notifySVReconfigure)
+		{
+			notifySVReconfigure();
+		}
 		wdt_enable(WDTO_15MS);  // prepare for reset
 		while (1) {}            // stop and wait for watchdog to knock us out
 	}
