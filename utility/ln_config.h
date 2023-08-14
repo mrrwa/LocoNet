@@ -162,6 +162,15 @@ typedef volatile LnPortRegisterType* LnPortAddrType;
 #define LN_RX_DDR   DDRA
 #define LN_RX_BIT   PINA7
 
+#elif defined(__AVR_ATmega164A__) || defined(__AVR_ATmega164P__) || defined(__AVR_ATmega324A__) || \
+defined(__AVR_ATmega324P__) || defined(__AVR_ATmega324PA__) || defined(__AVR_ATmega324PB__) || \
+defined(__AVR_ATmega644A__) || defined(__AVR_ATmega644P__) || defined(__AVR_ATmega1284__) || \
+defined(__AVR_ATmega1284P__)
+
+#define LN_RX_PORT  PIND
+#define LN_RX_DDR   DDRD
+#define LN_RX_BIT   PD6
+
 #else
 
 #define LN_RX_PORT  PINB

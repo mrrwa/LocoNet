@@ -1865,7 +1865,7 @@ uint8_t LocoNetCVClass::processLNCVMessage(lnMsg* LnPacket) {
 
 			switch (LnPacket->ub.ReqId) {
 			case LNCV_REQID_CFGREQUEST:
-				if (LnPacket->ub.payload.data.deviceClass == 0xFFFF && LnPacket->ub.payload.data.lncvNumber == 0x0000 && LnPacket->ub.payload.data.lncvValue == 0xFFFF) {
+				if (LnPacket->ub.payload.data.deviceClass == 0xFFFF && LnPacket->ub.payload.data.lncvNumber == 0x0000 && LnPacket->ub.payload.data.lncvValue == 0xFFFF && LnPacket->ub.payload.data.flags & LNCV_FLAG_PRON) != 0x00) {
 					// This is a discover message
 					DEBUG("LNCV discover: ");
 					if (notifyLNCVdiscover) {
