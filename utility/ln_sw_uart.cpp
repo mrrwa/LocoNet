@@ -38,6 +38,16 @@
  *
  *****************************************************************************/
 
+#if defined(ARDUINO) && ARDUINO >= 100
+#  include "Arduino.h"
+#else
+#  include "WProgram.h"
+#endif
+
+#include "ln_config.h"
+
+#if !defined(LOCONET_NO_SW_UART)
+
 #if defined(ESP8266)
 #  include <Arduino.h>
  // The Arduino standard GPIO routines are not enough,
@@ -56,16 +66,10 @@ extern "C" {
 #  include <avr/interrupt.h>
 #endif
 
-#if defined(ARDUINO) && ARDUINO >= 100
-#  include "Arduino.h"
-#else
-#  include "WProgram.h"
-#endif
-
 #include <string.h>
-#include "ln_config.h"
 #include "LocoNet.h"
 #include "ln_buf.h"    
+
 #include "ln_sw_uart.h"    
 
 volatile uint8_t  lnState;
@@ -682,3 +686,35 @@ LN_STATUS sendLocoNetPacketTry(lnMsg * TxData, unsigned char ucPrioDelay)
 	}
 	return LN_UNKNOWN_ERROR; // everything else is an error
 }
+#else
+
+#include <string.h>
+#include "LocoNet.h"
+extern bool sendRawLocoNet(uint8_t val);
+
+LN_STATUS sendLocoNetPacketTry(lnMsg *TxData, unsigned char ucPrioDelay)
+{
+  uint8_t  CheckSum ;
+
+  int lnTxLength = getLnMsgSize( TxData ) ;
+  int lnTxIndex;
+
+  // First calculate the checksum as it may not have been done
+  uint8_t CheckLength = lnTxLength - 1 ;
+  CheckSum = 0xFF ;
+
+  for( lnTxIndex = 0; lnTxIndex < CheckLength; lnTxIndex++ ) {
+    CheckSum ^= TxData->data[ lnTxIndex ] ;
+  }
+
+  TxData->data[ CheckLength ] = CheckSum ; 
+
+  for (lnTxIndex=0;lnTxIndex<lnTxLength;lnTxIndex++)
+  {
+    uint8_t val = TxData->data[lnTxIndex];
+		sendRawLocoNet(val);  
+  }
+  return LN_DONE;
+}
+
+#endif //!defined(LOCONET_NO_SW_UART)

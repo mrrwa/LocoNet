@@ -55,6 +55,21 @@
  // figure out what board we are building
 
  // Common defines
+ 
+// turn off EEPROM for platforms not currenty implemented
+#if defined(STM32F1) || !defined(ES8266) || !defined(__AVR__) 
+  #ifndef LOCONET_NO_EEPROM 
+  #define LOCONET_NO_EEPROM
+  #endif
+#endif
+
+// turn off Software UART for platforms not currenty implemented
+#if !defined(STM32F1) && !defined(ES8266) && !defined(__AVR__) 
+  #ifndef LOCONET_NO_SW_UART
+  #define LOCONET_NO_SW_UART
+  #endif
+#endif
+    
 #if !defined(STM32F1) && !defined(ESP8266)
 #  ifdef PINL	//      For the Mega 2560 (should work with 1280, etc)
 #    define _LNET_USE_MEGA
