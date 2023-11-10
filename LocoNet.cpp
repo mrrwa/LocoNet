@@ -1313,6 +1313,7 @@ const char* LocoNetThrottleClass::getSpeedStepStr(TH_SPEED_STEPS speedStep)
 #define FC_FLAG_DCS100_COMPATIBLE_SPEED	0x01
 #define FC_FLAG_MINUTE_ROLLOVER_SYNC	0x02
 #define FC_FLAG_NOTIFY_FRAC_MINS_TICK	0x04
+#define FC_FLAG_NOTIFY_JMRI							0x08			// new for JMRI
 #define FC_FRAC_MIN_BASE   				0x3FFF
 #define FC_FRAC_RESET_HIGH	 			0x78
 #define FC_FRAC_RESET_LOW 	 			0x6D
@@ -1334,6 +1335,14 @@ void LocoNetFastClockClass::init(uint8_t DCS100CompatibleSpeed, uint8_t CorrectD
 		fcFlags |= FC_FLAG_NOTIFY_FRAC_MINS_TICK;
 }
 
+// new method
+void LocoNetFastClockClass::initJMRI(uint8_t IsJMRI)
+{
+	fcLastfrac_minsh = 0;
+	if (IsJMRI)
+		fcFlags |= FC_FLAG_NOTIFY_JMRI;
+}
+
 void LocoNetFastClockClass::poll(void)
 {
 	LocoNet.send(OPC_RQ_SL_DATA, FC_SLOT, 0);
@@ -1351,19 +1360,24 @@ void LocoNetFastClockClass::processMessage(lnMsg* LnPacket)
 {
 	if ((LnPacket->fc.slot == FC_SLOT) && ((LnPacket->fc.command == OPC_WR_SL_DATA) || (LnPacket->fc.command == OPC_SL_RD_DATA)))
 	{
-		if (LnPacket->fc.clk_cntrl & 0x40)
-		{
-			if (fcState >= FC_ST_REQ_TIME)
+		if ((LnPacket->fc.clk_cntrl & 0x40)
+// +++ added because JMRI is sending 'fc.clk_cntrl = 0x00' (Bit 6 not set)
+			|| (fcFlags & FC_FLAG_NOTIFY_JMRI))
+// added end
 			{
-				memcpy(&fcSlotData, &LnPacket->fc, sizeof(fastClockMsg));
+				if (fcState >= FC_ST_REQ_TIME)
+				{
+					memcpy(&fcSlotData, &LnPacket->fc, sizeof(fastClockMsg));
+// ++ added for JMRI and use in "process66msActions"
+					fcLastfrac_minsh = fcSlotData.frac_minsh;
+// added end
+					doNotify(1);
 
-				doNotify(1);
+					if (notifyFastClockFracMins && fcFlags & FC_FLAG_NOTIFY_FRAC_MINS_TICK)
+						notifyFastClockFracMins(FC_FRAC_MIN_BASE - ((fcSlotData.frac_minsh << 7) + fcSlotData.frac_minsl));
 
-				if (notifyFastClockFracMins && fcFlags & FC_FLAG_NOTIFY_FRAC_MINS_TICK)
-					notifyFastClockFracMins(FC_FRAC_MIN_BASE - ((fcSlotData.frac_minsh << 7) + fcSlotData.frac_minsl));
-
-				fcState = FC_ST_READY;
-			}
+					fcState = FC_ST_READY;
+				}
 		}
 		else
 			fcState = FC_ST_DISABLED;
@@ -1376,8 +1390,17 @@ void LocoNetFastClockClass::process66msActions(void)
 	if (fcState == FC_ST_READY)
 	{
 		fcSlotData.frac_minsl += fcSlotData.clk_rate;
-		if (fcSlotData.frac_minsl & 0x80)
-		{
+		if ((fcSlotData.frac_minsl & 0x80)
+// +++ added because JMRI starts with 'fcSlotData.frac_minsh = 3' instead of FC_FRAC_RESET_HIGH (0x78)
+//                                 therefore fcSlotData.frac_minsh is always less than 0x80
+//															   and fcSlotData.frac_minsh comes in maximum up to 10, independant from fcSlotdata.clk_rate
+			|| ((fcFlags & FC_FLAG_NOTIFY_JMRI) &&
+				(fcSlotData.frac_minsh > (fcLastfrac_minsh + 6)) &&
+				(fcSlotData.frac_minsh < (FC_FRAC_RESET_HIGH + (fcFlags & FC_FLAG_DCS100_COMPATIBLE_SPEED)))
+				)
+			)
+// added end
+			{
 			fcSlotData.frac_minsl &= ~0x80;
 
 			fcSlotData.frac_minsh++;
