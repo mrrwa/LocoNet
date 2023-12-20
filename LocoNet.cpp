@@ -172,6 +172,12 @@ bool LocoNetClass::available(void)
 	return lnPacketReady(&LnBuffer);
 }
 
+//Get the state of the uart, when value is 0, it is ok to send data; value list is ln_sw_uart.h
+LN_UART_STATE LocoNetClass::uartState()
+{
+	return uartLoconetState();
+}
+
 // Check the size in bytes of waiting message
 uint8_t LocoNetClass::length(void)
 {
