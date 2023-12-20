@@ -87,6 +87,16 @@ typedef enum
 	LN_RETRY_ERROR
 } LN_STATUS;
 
+typedef enum
+{
+	LN_ST_IDLE = 0, // net is free for anyone to start transmission
+	LN_ST_CD_BACKOFF = 1, // timer interrupt is counting backoff bits
+	LN_ST_TX_COLLISION = 2, // just sending break after creating a collision
+	LN_ST_TX = 3, // transmitting a packet
+	LN_ST_RX = 4 // receiving bytes
+} LN_UART_STATE;
+
+
 // CD Backoff starts after the Stop Bit (Bit 9) and has a minimum or 20 Bit Times
 // but initially starts with an additional 20 Bit Times 
 #define   LN_CARRIER_TICKS      20  // carrier detect backoff - all devices have to wait this
@@ -137,6 +147,7 @@ public:
 	LN_STATUS   send(uint8_t OpCode, uint8_t Data1, uint8_t Data2);
 	LN_STATUS   send(uint8_t OpCode, uint8_t Data1, uint8_t Data2, uint8_t PrioDelay);
 	LN_STATUS   sendLongAck(uint8_t ucCode);
+	LN_UART_STATE	uartState();
 
 	LnBufStats* getStats(void);
 
