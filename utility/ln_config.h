@@ -98,7 +98,8 @@ typedef volatile LnPortRegisterType* LnPortAddrType;
 #  if defined(STM32F1)
 #    define LN_BIT_PERIOD             (rcc_apb1_frequency * 2 / 16666)
 #  elif defined(ARDUINO_ARCH_STM32)
-#    define LN_BIT_PERIOD             (36000000 * 2 / 16666)
+#    define LN_BIT_PERIOD             (36000000 / 16666)
+//#    define LN_BIT_PERIOD             (72000000 * 2 / 16666)
 #  else
 #    define LN_BIT_PERIOD             (F_CPU / 16666)
 #  endif
@@ -221,11 +222,14 @@ defined(__AVR_ATmega1284P__)
 #define LN_RX_GPIOCFG LL_SYSCFG_EXTI_PORTB
 
 
+#undef TIM2_IRQHandler
+#undef EXTI15_10_IRQHandler
+
 #define LN_SB_SIGNAL          EXTI15_10_IRQHandler
 #define LN_SB_IRQn            EXTI15_10_IRQn
 #define LN_TMR_SIGNAL         TIM2_IRQHandler
 
-#define ISR(name) void name(void)
+#define ISR(name) extern "C" void name(void)
 
 #elif defined(STM32F1)
 

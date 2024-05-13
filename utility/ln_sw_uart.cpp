@@ -193,7 +193,7 @@ ISR(LN_SB_SIGNAL)
 #  elif defined(ARDUINO_ARCH_STM32)
 	lnCompareTarget = LL_TIM_GetCounter(TIM2) + LN_TIMER_RX_START_PERIOD;
 	/* Set the initual output compare value for OC1. */
-	LL_TIM_OC_SetCompareCH1(TIM2, lnCompareTarget);
+	LL_TIM_OC_SetCompareCH1(TIM2, lnCompareTarget & 0xffff);
 #  else  // Get the Current Timer1 Count and Add the offset for the Compare target
 	lnCompareTarget = LN_TMR_INP_CAPT_REG + LN_TIMER_RX_START_PERIOD;
 	LN_TMR_OUTP_CAPT_REG = lnCompareTarget;
@@ -247,7 +247,8 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 #  if defined(STM32F1) 
 	timer_set_oc_value(TIM2, TIM_OC1, lnCompareTarget);
 #  elif defined(ARDUINO_ARCH_STM32)
-	LL_TIM_OC_SetCompareCH1(TIM2, lnCompareTarget);
+        lnCompareTarget &= 0xffff;
+	LL_TIM_OC_SetCompareCH1(TIM2, lnCompareTarget & 0xffff);
 #  else
 	LN_TMR_OUTP_CAPT_REG = lnCompareTarget;
 #  endif
@@ -365,7 +366,7 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 			timer_set_oc_value(TIM2, TIM_OC1, lnCompareTarget);
 #  elif defined(ARDUINO_ARCH_STM32)
 			lnCompareTarget = LL_TIM_GetCounter(TIM2) + LN_TIMER_TX_RELOAD_PERIOD - LN_TIMER_TX_RELOAD_ADJUST;
-                        LL_TIM_OC_SetCompareCH1(TIM2, lnCompareTarget);
+                        LL_TIM_OC_SetCompareCH1(TIM2, lnCompareTarget & 0xffff);
 #  else
 			lnCompareTarget = LN_TMR_COUNT_REG + LN_TIMER_TX_RELOAD_PERIOD - LN_TIMER_TX_RELOAD_ADJUST;
 			LN_TMR_OUTP_CAPT_REG = lnCompareTarget;
@@ -526,6 +527,7 @@ void initLocoNetHardware(LnBuf * RxBuffer)
         //__HAL_RCC_EXTI_CLK_ENABLE();
 
 	// Enable TIM2 interrupt.
+        NVIC_SetPriority(TIM2_IRQn, 0);
         NVIC_EnableIRQ(TIM2_IRQn);
 
 	// Reset TIM2 peripheral to defaults.
@@ -544,6 +546,8 @@ void initLocoNetHardware(LnBuf * RxBuffer)
         TimHandle.Init.RepetitionCounter = 0;
         HAL_TIM_Base_Init(&TimHandle);
         HAL_TIM_Base_Start(&TimHandle);
+        // Disables all interrupts on the timer.
+        TIM2->DIER = 0;
 
   // Setup level change interrupt
         
@@ -558,6 +562,7 @@ void initLocoNetHardware(LnBuf * RxBuffer)
 
 	LN_CLEAR_START_BIT_FLAG();
 	LN_ENABLE_START_BIT_INTERRUPT();
+        NVIC_SetPriority(LN_SB_IRQn, 0);
         NVIC_EnableIRQ(LN_SB_IRQn);
         
 #else
@@ -710,7 +715,7 @@ LN_STATUS sendLocoNetPacketTry(lnMsg * TxData, unsigned char ucPrioDelay)
 #  elif defined(ARDUINO_ARCH_STM32)
 	lnCompareTarget = LL_TIM_GetCounter(TIM2) + LN_TIMER_TX_RELOAD_PERIOD - LN_TIMER_TX_RELOAD_ADJUST;
 	/* Set the initual output compare value for OC1. */
-	LL_TIM_OC_SetCompareCH1(TIM2, lnCompareTarget);
+	LL_TIM_OC_SetCompareCH1(TIM2, lnCompareTarget & 0xffff);
 #  else
 	lnCompareTarget = LN_TMR_COUNT_REG + LN_TIMER_TX_RELOAD_PERIOD - LN_TIMER_TX_RELOAD_ADJUST;
 	LN_TMR_OUTP_CAPT_REG = lnCompareTarget;
