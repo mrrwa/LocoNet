@@ -335,7 +335,7 @@ public:
 /************************************************************************************
 	SV (System Variable Handling
 ************************************************************************************/
-#if defined(STM32F1)
+#if defined(STM32F1) || defined(ARDUINO_ARCH_STM32)
 // STM31F1 has no flash.
 #else
 
@@ -490,7 +490,7 @@ public:
 	SV_STATUS doDeferredProcessing(void);
 };
 
-#endif // STM32F1
+#endif // STM32F1 || ARDUINO_ARCH_STM32
 
 class LocoNetCVClass
 {

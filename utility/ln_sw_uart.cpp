@@ -45,12 +45,18 @@
 extern "C" {
 #  include "gpio.h"
 }
-#elif defined(STM32F1)
+#elif defined(STM32F1)  // no ARCH here
 #  include <libopencm3/cm3/nvic.h>
 #  include <libopencm3/stm32/exti.h>
 #  include <libopencm3/stm32/gpio.h>
 #  include <libopencm3/stm32/rcc.h>
 #  include <libopencm3/stm32/timer.h>
+#elif defined(ARDUINO_ARCH_STM32)
+#include <Arduino.h>
+#include <stm32yyxx_ll_system.h>
+#include <stm32yyxx_ll_exti.h>
+#include <stm32yyxx_ll_tim.h>
+/// @todo
 #else
 #  include <avr/io.h>
 #  include <avr/interrupt.h>
@@ -84,7 +90,7 @@ volatile uint8_t  lnTxSuccess;   // this boolean flag as a message from timer in
 volatile uint8_t  lnLastTxBit;
 #endif
 
-#ifndef ESP8266
+#if !defined(ESP8266) && !defined(ARDUINO_ARCH_STM32)
 volatile uint8_t* txPort;
 #else
 LnPortAddrType txPort;
@@ -131,7 +137,7 @@ bool ICACHE_RAM_ATTR isLocoNetCollision()
 }
 #endif
 
-#if defined(STM32F1)
+#if defined(STM32F1) || defined(ARDUINO_ARCH_STM32)
 #  define bit_is_set(PORT, PIN) (((PORT >> PIN) & 0x01) != 0)
 #  define bit_is_clear(PORT, PIN) (((PORT >> PIN) & 0x01) == 0)
 #endif
@@ -160,6 +166,12 @@ ISR(LN_SB_SIGNAL)
 		// Ignore any interrupt that is not EXTI14.
 		return;
 	}
+#elif defined(ARDUINO_ARCH_STM32)
+	// Check if it really was EXTI14 that triggered this interrupt.
+	if (!LL_EXTI_IsActiveFlag_0_31(1u<<LN_RX_BIT)) {
+		// Ignore any interrupt that is not EXTI14.
+		return;
+	}
 #endif
 
 #if defined(ESP8266)
@@ -178,6 +190,10 @@ ISR(LN_SB_SIGNAL)
 	lnCompareTarget = timer_get_counter(TIM2) + LN_TIMER_RX_START_PERIOD;
 	/* Set the initual output compare value for OC1. */
 	timer_set_oc_value(TIM2, TIM_OC1, lnCompareTarget);
+#  elif defined(ARDUINO_ARCH_STM32)
+	lnCompareTarget = LL_TIM_GetCounter(TIM2) + LN_TIMER_RX_START_PERIOD;
+	/* Set the initual output compare value for OC1. */
+	LL_TIM_OC_SetCompareCH1(TIM2, lnCompareTarget);
 #  else  // Get the Current Timer1 Count and Add the offset for the Compare target
 	lnCompareTarget = LN_TMR_INP_CAPT_REG + LN_TIMER_RX_START_PERIOD;
 	LN_TMR_OUTP_CAPT_REG = lnCompareTarget;
@@ -228,8 +244,10 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 #else
 	LN_CLEAR_TIMER_FLAG();
 	lnCompareTarget += LN_TIMER_RX_RELOAD_PERIOD;
-#  if defined(STM32F1)
+#  if defined(STM32F1) 
 	timer_set_oc_value(TIM2, TIM_OC1, lnCompareTarget);
+#  elif defined(ARDUINO_ARCH_STM32)
+	LL_TIM_OC_SetCompareCH1(TIM2, lnCompareTarget);
 #  else
 	LN_TMR_OUTP_CAPT_REG = lnCompareTarget;
 #  endif
@@ -345,6 +363,9 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 #  if defined(STM32F1)
 			lnCompareTarget = timer_get_counter(TIM2) + LN_TIMER_TX_RELOAD_PERIOD - LN_TIMER_TX_RELOAD_ADJUST;
 			timer_set_oc_value(TIM2, TIM_OC1, lnCompareTarget);
+#  elif defined(ARDUINO_ARCH_STM32)
+			lnCompareTarget = LL_TIM_GetCounter(TIM2) + LN_TIMER_TX_RELOAD_PERIOD - LN_TIMER_TX_RELOAD_ADJUST;
+                        LL_TIM_OC_SetCompareCH1(TIM2, lnCompareTarget);
 #  else
 			lnCompareTarget = LN_TMR_COUNT_REG + LN_TIMER_TX_RELOAD_PERIOD - LN_TIMER_TX_RELOAD_ADJUST;
 			LN_TMR_OUTP_CAPT_REG = lnCompareTarget;
@@ -425,7 +446,7 @@ void initLocoNetHardware(LnBuf * RxBuffer)
 	// Set the RX line to Input
 #if defined(ESP8266)
 	pinMode(LN_RX_PORT, INPUT);
-#elif defined(STM32F1)
+#elif defined(STM32F1) || defined(ARDUINO_ARCH_STM32)
 	pinMode(LN_RX_PIN_NAME, INPUT);
 #else
 	cbi(LN_RX_DDR, LN_RX_BIT);
@@ -496,7 +517,49 @@ void initLocoNetHardware(LnBuf * RxBuffer)
 	exti_reset_request(EXTI14);
 	exti_enable_request(EXTI14);
 	nvic_enable_irq(NVIC_EXTI15_10_IRQ);
+#elif defined(ARDUINO_ARCH_STM32)
 
+        // === Setup the timer ===
+
+	// Enable TIM2 clock. 
+        __HAL_RCC_TIM2_CLK_ENABLE();
+        //__HAL_RCC_EXTI_CLK_ENABLE();
+
+	// Enable TIM2 interrupt.
+        NVIC_EnableIRQ(TIM2_IRQn);
+
+	// Reset TIM2 peripheral to defaults.
+        __HAL_RCC_TIM2_FORCE_RESET();
+        asm("nop ; nop ; nop; ");
+        __HAL_RCC_TIM2_RELEASE_RESET();
+
+        /* Initializes the blinker timer. */
+        TIM_HandleTypeDef TimHandle;
+        memset(&TimHandle, 0, sizeof(TimHandle));
+        TimHandle.Instance = TIM2;
+        TimHandle.Init.Period = 65535;
+        TimHandle.Init.Prescaler = 1;
+        TimHandle.Init.ClockDivision = 0;
+        TimHandle.Init.CounterMode = TIM_COUNTERMODE_UP;
+        TimHandle.Init.RepetitionCounter = 0;
+        HAL_TIM_Base_Init(&TimHandle);
+        HAL_TIM_Base_Start(&TimHandle);
+
+  // Setup level change interrupt
+        
+        LL_SYSCFG_SetEXTISource(LN_RX_GPIOCFG, LN_RX_BITCFG);
+#  ifdef LN_SW_UART_RX_INVERTED  
+        LL_EXTI_EnableRisingTrig_0_31(LN_EXTI_FLAG);
+#  else
+        LL_EXTI_EnableFallingTrig_0_31(LN_EXTI_FLAG);
+#  endif
+
+	lnState = LN_ST_IDLE;
+
+	LN_CLEAR_START_BIT_FLAG();
+	LN_ENABLE_START_BIT_INTERRUPT();
+        NVIC_EnableIRQ(LN_SB_IRQn);
+        
 #else
 #  ifdef LN_INIT_COMPARATOR
 	LN_INIT_COMPARATOR();
@@ -525,6 +588,8 @@ void initLocoNetHardware(LnBuf * RxBuffer)
 #  else
 	attachInterrupt(digitalPinToInterrupt(LN_RX_PORT), ln_esp8266_pin_isr, FALLING);
 #  endif
+#elif defined(ARDUINO_ARCH_STM32)
+        // all of these already done above
 #else
 	//Clear StartBit Interrupt flag
 	LN_CLEAR_START_BIT_FLAG();
@@ -538,7 +603,7 @@ void initLocoNetHardware(LnBuf * RxBuffer)
 
 	// Set Timer Clock Source 
 	LN_TMR_CONTROL_REG = (LN_TMR_CONTROL_REG & 0xF8) | LN_TMR_PRESCALER;
-#endif // STM32F1 
+#endif // STM32F1 || ARDUINO_ARCH_STM32
 }
 
 
@@ -609,8 +674,10 @@ LN_STATUS sendLocoNetPacketTry(lnMsg * TxData, unsigned char ucPrioDelay)
 #else
 	// Before we do anything else - Disable StartBit Interrupt
 	LN_DISABLE_START_BIT_INTERRUPT();
-#  if defined(STM32F1)
+#  if defined(STM32F1) 
 	if (exti_get_flag_status(EXTI14)) {
+#  elif defined(ARDUINO_ARCH_STM32)
+	if (!LL_EXTI_IsActiveFlag_0_31(1u<<LN_RX_BIT)) {
 #  else
 	if (bit_is_set(LN_SB_INT_STATUS_REG, LN_SB_INT_STATUS_BIT)) {
 #  endif
@@ -640,6 +707,10 @@ LN_STATUS sendLocoNetPacketTry(lnMsg * TxData, unsigned char ucPrioDelay)
 	lnCompareTarget = timer_get_counter(TIM2) + LN_TIMER_TX_RELOAD_PERIOD - LN_TIMER_TX_RELOAD_ADJUST;
 	/* Set the initual output compare value for OC1. */
 	timer_set_oc_value(TIM2, TIM_OC1, lnCompareTarget);
+#  elif defined(ARDUINO_ARCH_STM32)
+	lnCompareTarget = LL_TIM_GetCounter(TIM2) + LN_TIMER_TX_RELOAD_PERIOD - LN_TIMER_TX_RELOAD_ADJUST;
+	/* Set the initual output compare value for OC1. */
+	LL_TIM_OC_SetCompareCH1(TIM2, lnCompareTarget);
 #  else
 	lnCompareTarget = LN_TMR_COUNT_REG + LN_TIMER_TX_RELOAD_PERIOD - LN_TIMER_TX_RELOAD_ADJUST;
 	LN_TMR_OUTP_CAPT_REG = lnCompareTarget;

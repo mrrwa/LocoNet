@@ -83,10 +83,10 @@ uint8_t eeprom_read_byte(const uint8_t* offset) {
 void eeprom_write_byte(const uint8_t* offset, uint8_t value) {
 	EEPROM.write((int)offset, value);
 }
-#elif defined(STM32F1)
-#  include <FreeRTOS.h>
-#  include <task.h>
-#  include <libopencm3/stm32/gpio.h>
+#elif defined(STM32F1) || defined(ARDUINO_ARCH_STM32)
+//#  include <FreeRTOS.h>
+//#  include <task.h>
+//#  include <libopencm3/stm32/gpio.h>
 #  include <cstdint>
 #else
 #  include <avr/eeprom.h>
@@ -154,7 +154,7 @@ void LocoNetClass::setTxPin(uint8_t txPin)
 	LnPortRegisterType bitMaskTest = 0x01;
 	LnPortRegisterType bitNum = 0;
 
-	LnPortRegisterType port = digitalPinToPort(txPin);
+	auto port = digitalPinToPort(txPin);
 	LnPortAddrType out = portOutputRegister(port);
 
 	while (bitMask != bitMaskTest)
@@ -618,7 +618,7 @@ void LocoNetThrottleClass::updateState(TH_STATE State, uint8_t ForceNotify)
 
 void LocoNetThrottleClass::updateStatus1(uint8_t Status, uint8_t ForceNotify)
 {
-	register uint8_t Mask;	// Temporary uint8_t Variable for bitwise AND to force
+	uint8_t Mask;	// Temporary uint8_t Variable for bitwise AND to force
 	// the compiler to only do 8 bit operations not 16
 
 	if (ForceNotify || myStatus1 != Status)
@@ -1428,7 +1428,7 @@ void LocoNetFastClockClass::process66msActions(void)
 	}
 }
 
-#if defined(STM32F1)
+#if defined(STM32F1) || defined(ARDUINO_ARCH_STM32)
 // STM31F1 has no EEPROM.
 #else
 
@@ -1760,7 +1760,7 @@ SV_STATUS LocoNetSystemVariableClass::doDeferredProcessing(void)
 	return SV_OK;
 }
 
-#endif // STM32F1
+#endif // STM32F1 || ARDUINO_ARCH_STM32
 
 
 /*****************************************************************************

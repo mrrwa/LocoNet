@@ -43,7 +43,7 @@
 
 #ifdef ESP8266
 #  include <Arduino.h>
-#elif !defined(STM32F1)
+#elif !defined(STM32F1) && !defined(ARDUINO_ARCH_STM32)
 #  include <avr/io.h>
 #  include <avr/interrupt.h>
 #endif
@@ -100,6 +100,25 @@
 #  define LN_ENABLE_TIMER_INTERRUPT() (timer_enable_irq(TIM2, TIM_DIER_CC1IE))
 // Disable Timer Compare Interrupt
 #  define LN_DISABLE_TIMER_INTERRUPT() (timer_disable_irq(TIM2, TIM_DIER_CC1IE))
+
+#elif defined(ARDUINO_ARCH_STM32)
+
+# define LN_EXTI_FLAG (1u << LN_RX_BIT)
+//Clear StartBit Interrupt flag
+#  define LN_CLEAR_START_BIT_FLAG() (LL_EXTI_ClearFlag_0_31(LN_EXTI_FLAG))
+//Enable StartBit Interrupt
+#  define LN_ENABLE_START_BIT_INTERRUPT() (LL_EXTI_EnableIT_0_31(LN_EXTI_FLAG))
+//Disable StartBit Interrupt
+#  define LN_DISABLE_START_BIT_INTERRUPT() (LL_EXTI_DisableIT_0_31(LN_EXTI_FLAG))
+
+// Clear Timer Interrupt Flag
+#  define LN_CLEAR_TIMER_FLAG() (LL_TIM_ClearFlag_CC1(TIM2))
+
+// Enable Timer Compare Interrupt
+#  define LN_ENABLE_TIMER_INTERRUPT() (LL_TIM_EnableIT_CC1(TIM2))
+// Disable Timer Compare Interrupt
+#  define LN_DISABLE_TIMER_INTERRUPT() (LL_TIM_DisableIT_CC1(TIM2))
+
 #elif !defined(ESP8266)
 //Clear StartBit Interrupt flag
 #  define LN_CLEAR_START_BIT_FLAG() (sbi( LN_SB_INT_STATUS_REG, LN_SB_INT_STATUS_BIT ))
@@ -116,6 +135,25 @@
 // Disable Timer Compare Interrupt
 #  define LN_DISABLE_TIMER_INTERRUPT() (cbi( LN_TMR_INT_ENABLE_REG, LN_TMR_INT_ENABLE_BIT ))
 #endif
+
+#if defined(ARDUINO_ARCH_STM32)
+#elif !defined(ESP8266)
+//Clear StartBit Interrupt flag
+#  define LN_CLEAR_START_BIT_FLAG() (sbi( LN_SB_INT_STATUS_REG, LN_SB_INT_STATUS_BIT ))
+//Enable StartBit Interrupt
+#  define LN_ENABLE_START_BIT_INTERRUPT() (sbi( LN_SB_INT_ENABLE_REG, LN_SB_INT_ENABLE_BIT ))
+//Disable StartBit Interrupt
+#  define LN_DISABLE_START_BIT_INTERRUPT() (cbi( LN_SB_INT_ENABLE_REG, LN_SB_INT_ENABLE_BIT ))
+
+// Clear Timer Interrupt Flag
+#  define LN_CLEAR_TIMER_FLAG() (sbi(LN_TMR_INT_STATUS_REG, LN_TMR_INT_STATUS_BIT))
+
+// Enable Timer Compare Interrupt
+#  define LN_ENABLE_TIMER_INTERRUPT() (sbi(LN_TMR_INT_ENABLE_REG, LN_TMR_INT_ENABLE_BIT))
+// Disable Timer Compare Interrupt
+#  define LN_DISABLE_TIMER_INTERRUPT() (cbi( LN_TMR_INT_ENABLE_REG, LN_TMR_INT_ENABLE_BIT ))
+#endif
+
 
 // For now we will simply check that TX and RX ARE NOT THE SAME as our circuit
 // requires the TX signal to be INVERTED.  If they are THE SAME then we have a 
