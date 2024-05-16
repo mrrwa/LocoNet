@@ -682,7 +682,7 @@ LN_STATUS sendLocoNetPacketTry(lnMsg * TxData, unsigned char ucPrioDelay)
 #  if defined(STM32F1) 
 	if (exti_get_flag_status(EXTI14)) {
 #  elif defined(ARDUINO_ARCH_STM32)
-	if (!LL_EXTI_IsActiveFlag_0_31(1u<<LN_RX_BIT)) {
+	if (LL_EXTI_IsActiveFlag_0_31(1u<<LN_RX_BIT)) {
 #  else
 	if (bit_is_set(LN_SB_INT_STATUS_REG, LN_SB_INT_STATUS_BIT)) {
 #  endif
