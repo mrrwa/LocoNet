@@ -32,7 +32,7 @@ It's known to work with:
 - MEGA (ATmega2560)
 - Leonardo, LeoStick, Arduino Pro Micro (ATmega32U4)
 - Various AVRTiny Boards (ATTiny84, ATTiny84A, ATTiny841)
-- Blue Pill (STM32F1 w/ libopencm3 and Arduino Stubs)
+- Blue Pill (STM32F1 w/ libopencm3 and Arduino Stubs, or STM32F3 with stm32duino core)
 - NodeMCU v1.0 (ESP8266 core for Arduino)
 
 As of 2020-03-28 - Hans Tanner added the capability to change the polarity
