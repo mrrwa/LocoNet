@@ -119,25 +119,9 @@
 // Disable Timer Compare Interrupt
 #  define LN_DISABLE_TIMER_INTERRUPT() (LL_TIM_DisableIT_CC1(TIM2))
 
-#elif !defined(ESP8266)
-//Clear StartBit Interrupt flag
-#  define LN_CLEAR_START_BIT_FLAG() (sbi( LN_SB_INT_STATUS_REG, LN_SB_INT_STATUS_BIT ))
-//Enable StartBit Interrupt
-#  define LN_ENABLE_START_BIT_INTERRUPT() (sbi( LN_SB_INT_ENABLE_REG, LN_SB_INT_ENABLE_BIT ))
-//Disable StartBit Interrupt
-#  define LN_DISABLE_START_BIT_INTERRUPT() (cbi( LN_SB_INT_ENABLE_REG, LN_SB_INT_ENABLE_BIT ))
-
-// Clear Timer Interrupt Flag
-#  define LN_CLEAR_TIMER_FLAG() (sbi(LN_TMR_INT_STATUS_REG, LN_TMR_INT_STATUS_BIT))
-
-// Enable Timer Compare Interrupt
-#  define LN_ENABLE_TIMER_INTERRUPT() (sbi(LN_TMR_INT_ENABLE_REG, LN_TMR_INT_ENABLE_BIT))
-// Disable Timer Compare Interrupt
-#  define LN_DISABLE_TIMER_INTERRUPT() (cbi( LN_TMR_INT_ENABLE_REG, LN_TMR_INT_ENABLE_BIT ))
-#endif
-
-#if defined(ARDUINO_ARCH_STM32)
-#elif !defined(ESP8266)
+#elif defined(ESP8266)
+// No common definitions needed for the ESP.
+#else // AVR
 //Clear StartBit Interrupt flag
 #  define LN_CLEAR_START_BIT_FLAG() (sbi( LN_SB_INT_STATUS_REG, LN_SB_INT_STATUS_BIT ))
 //Enable StartBit Interrupt
