@@ -45,7 +45,7 @@
 extern "C" {
 #  include "gpio.h"
 }
-#elif defined(STM32F1)  // no ARCH here
+#elif defined(STM32F1)
 #  include <libopencm3/cm3/nvic.h>
 #  include <libopencm3/stm32/exti.h>
 #  include <libopencm3/stm32/gpio.h>
@@ -524,7 +524,6 @@ void initLocoNetHardware(LnBuf * RxBuffer)
 
 	// Enable TIM2 clock. 
         __HAL_RCC_TIM2_CLK_ENABLE();
-        //__HAL_RCC_EXTI_CLK_ENABLE();
 
 	// Enable TIM2 interrupt.
         NVIC_SetPriority(TIM2_IRQn, 0);
@@ -535,7 +534,7 @@ void initLocoNetHardware(LnBuf * RxBuffer)
         asm("nop ; nop ; nop; ");
         __HAL_RCC_TIM2_RELEASE_RESET();
 
-        /* Initializes the blinker timer. */
+        // Initializes TIM2 timer to count at max speed.
         TIM_HandleTypeDef TimHandle;
         memset(&TimHandle, 0, sizeof(TimHandle));
         TimHandle.Instance = TIM2;
@@ -549,8 +548,7 @@ void initLocoNetHardware(LnBuf * RxBuffer)
         // Disables all interrupts on the timer.
         TIM2->DIER = 0;
 
-  // Setup level change interrupt
-        
+        // Sets up level change interrupt on RX pin.
         LL_SYSCFG_SetEXTISource(LN_RX_GPIOCFG, LN_RX_BITCFG);
 #  ifdef LN_SW_UART_RX_INVERTED  
         LL_EXTI_EnableRisingTrig_0_31(LN_EXTI_FLAG);

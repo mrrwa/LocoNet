@@ -98,8 +98,8 @@ typedef volatile LnPortRegisterType* LnPortAddrType;
 #  if defined(STM32F1)
 #    define LN_BIT_PERIOD             (rcc_apb1_frequency * 2 / 16666)
 #  elif defined(ARDUINO_ARCH_STM32)
+     // TMR2 runs at half the CPU clock on the STM32F3.
 #    define LN_BIT_PERIOD             (36000000 / 16666)
-//#    define LN_BIT_PERIOD             (72000000 * 2 / 16666)
 #  else
 #    define LN_BIT_PERIOD             (F_CPU / 16666)
 #  endif
@@ -213,6 +213,9 @@ defined(__AVR_ATmega1284P__)
 #define LN_INIT_COMPARATOR() { TCCR1A = 0; TCCR1B = 0x01; }    // no prescaler, normal mode
 
 #elif defined(ARDUINO_ARCH_STM32)
+// This architecture is used for the stm32 core in Arduino (aka stm32duino,
+// also present in the boards manager under 'stm32'. The default settings
+// are for an STM32F303RE (nucleo).
 
 #define LN_RX_PIN_NAME PB14
 #define LN_RX_PORT  (*portInputRegister(GPIOB))
@@ -220,11 +223,6 @@ defined(__AVR_ATmega1284P__)
 #define LN_RX_BITCFG LL_SYSCFG_EXTI_LINE14
 #define LN_RX_GPIOSEL EXTI_GPIOB
 #define LN_RX_GPIOCFG LL_SYSCFG_EXTI_PORTB
-
-
-#undef TIM2_IRQHandler
-#undef EXTI15_10_IRQHandler
-
 #define LN_SB_SIGNAL          EXTI15_10_IRQHandler
 #define LN_SB_IRQn            EXTI15_10_IRQn
 #define LN_TMR_SIGNAL         TIM2_IRQHandler
