@@ -189,7 +189,7 @@ ISR(LN_SB_SIGNAL)
 #endif
 
 	// Set the State to indicate that we have begun to Receive
-	lnState = LN_ST_RX;
+	lnState = LN_UART_STATE::LN_ST_RX;
 
 	// Reset the bit counter so that on first increment it is on 0
 	lnBitCount = 0;
@@ -243,7 +243,7 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 #else
 		if (bit_is_set(LN_RX_PORT, LN_RX_BIT)) {
 #endif
-		  lnState = LN_ST_CD_BACKOFF;
+		  lnState = LN_UART_STATE::LN_ST_CD_BACKOFF;
 #if defined(ESP8266)
 		   // Enable the pin interrupt
 #ifdef LN_SW_UART_RX_INVERTED  
@@ -263,7 +263,7 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 	
 	lnBitCount++;                // Increment bit_counter
 
-	if (lnState == LN_ST_RX) {  // Are we in RX mode
+	if (lnState == LN_UART_STATE::LN_ST_RX) {  // Are we in RX mode
 		if (lnBitCount < 9) {     // Are we in the Stop Bits phase
 			lnCurrentByte >>= 1;
 #ifdef LN_SW_UART_RX_INVERTED
@@ -307,15 +307,15 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 		}
 
 		lnBitCount = 0;
-		lnState = LN_ST_CD_BACKOFF;
+		lnState = LN_UART_STATE::LN_ST_CD_BACKOFF;
 	}
 
-	if (lnState == LN_ST_TX) {   // Are we in the TX State
+	if (lnState == LN_UART_STATE::LN_ST_TX) {   // Are we in the TX State
 		// To get to this point we have already begun the TX cycle so we need to 
 		// first check for a Collision. 
 		if (IS_LN_COLLISION()) {			 // Collision?
 			lnBitCount = 0;
-			lnState = LN_ST_TX_COLLISION;
+			lnState = LN_UART_STATE::LN_ST_TX_COLLISION;
 			// ERROR_LED_ON();
 		}
 		else if (lnBitCount < 9) {   			 // Send each Bit
@@ -366,12 +366,12 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 
 			// Begin CD Backoff state
 			lnBitCount = 0;
-			lnState = LN_ST_CD_BACKOFF;
+			lnState = LN_UART_STATE::LN_ST_CD_BACKOFF;
 		}
 	}
 
 	// Note we may have got here from a failed TX cycle, if so BitCount will be 0
-	if (lnState == LN_ST_TX_COLLISION) {
+	if (lnState == LN_UART_STATE::LN_ST_TX_COLLISION) {
 		if (lnBitCount == 0) {
 			// Pull the TX Line low to indicate Collision
 			LN_SW_UART_SET_TX_LOW(LN_TX_PORT, LN_TX_BIT);
@@ -383,13 +383,13 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 			// ERROR_LED_OFF();
 
 			lnBitCount = 0;
-			lnState = LN_ST_CD_BACKOFF;
+			lnState = LN_UART_STATE::LN_ST_CD_BACKOFF;
 
 			lnRxBuffer->Stats.Collisions++;
 		}
 	}
 
-	if (lnState == LN_ST_CD_BACKOFF) {
+	if (lnState == LN_UART_STATE::LN_ST_CD_BACKOFF) {
 		if (lnBitCount == 0) {
 			// Even though we are waiting, other nodes may try and transmit early
 			// so Clear the Start Bit Interrupt Status Flag and Enable ready to 
@@ -407,7 +407,7 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 		}
 		else if (lnBitCount >= LN_BACKOFF_MAX) {
 			// declare network to free after maximum backoff delay
-			lnState = LN_ST_IDLE;
+			lnState = LN_UART_STATE::LN_ST_IDLE;
 #if defined(ESP8266)
 			timer1_detachInterrupt();
 #else
@@ -517,7 +517,7 @@ void initLocoNetHardware(LnBuf * RxBuffer)
 #  endif
 #endif
 
-	lnState = LN_ST_IDLE;
+	lnState = LN_UART_STATE::LN_ST_IDLE;
 
 #if defined(ESP8266)
 #  ifdef LN_SW_UART_RX_INVERTED  
@@ -541,6 +541,15 @@ void initLocoNetHardware(LnBuf * RxBuffer)
 #endif // STM32F1 
 }
 
+//Return loconet uart state;
+LN_UART_STATE uartLoconetState()
+{
+	LN_UART_STATE val;
+	noInterrupts();
+	val = lnState;
+	interrupts();
+	return val;
+}
 
 LN_STATUS sendLocoNetPacketTry(lnMsg * TxData, unsigned char ucPrioDelay)
 {
@@ -565,9 +574,9 @@ LN_STATUS sendLocoNetPacketTry(lnMsg * TxData, unsigned char ucPrioDelay)
 	}
 	// if priority delay was waited now, declare net as free for this try
 	noInterrupts();  // disabling interrupt to avoid confusion by ISR changing lnState while we want to do it
-	if (lnState == LN_ST_CD_BACKOFF) {
+	if (lnState == LN_UART_STATE::LN_ST_CD_BACKOFF) {
 		if (lnBitCount >= ucPrioDelay) {	// Likely we don't want to wait as long as
-			lnState = LN_ST_IDLE;			// the timer ISR waits its maximum delay.
+			lnState = LN_UART_STATE::LN_ST_IDLE;			// the timer ISR waits its maximum delay.
 
 #if defined(ESP8266)
 			timer1_detachInterrupt();
@@ -581,7 +590,7 @@ LN_STATUS sendLocoNetPacketTry(lnMsg * TxData, unsigned char ucPrioDelay)
 
 
 	// If the Network is not Idle, don't start the packet
-	if (lnState == LN_ST_CD_BACKOFF) {
+	if (lnState == LN_UART_STATE::LN_ST_CD_BACKOFF) {
 		if (lnBitCount < LN_CARRIER_TICKS) {  // in carrier detect timer?
 			return LN_CD_BACKOFF;
 		}
@@ -590,7 +599,7 @@ LN_STATUS sendLocoNetPacketTry(lnMsg * TxData, unsigned char ucPrioDelay)
 		}
 	}
 
-	if (lnState != LN_ST_IDLE) {
+	if (lnState != LN_UART_STATE::LN_ST_IDLE) {
 		return LN_NETWORK_BUSY;  // neither idle nor backoff -> busy
 	}
 	// We need to do this with interrupts off.
@@ -656,7 +665,7 @@ LN_STATUS sendLocoNetPacketTry(lnMsg * TxData, unsigned char ucPrioDelay)
 	lnCurrentByte = TxData->data[0];
 
 	// Set the State to Transmit
-	lnState = LN_ST_TX;
+	lnState = LN_UART_STATE::LN_ST_TX;
 
 	// Reset the bit counter
 	lnBitCount = 0;
@@ -670,14 +679,14 @@ LN_STATUS sendLocoNetPacketTry(lnMsg * TxData, unsigned char ucPrioDelay)
 	LN_ENABLE_TIMER_INTERRUPT();
 #endif
 
-	while (lnState == LN_ST_TX) {
+	while (lnState == LN_UART_STATE::LN_ST_TX) {
 		// now busy wait until the interrupts do the rest
 	}
 	if (lnTxSuccess) {
 		lnRxBuffer->Stats.TxPackets++;
 		return LN_DONE;
 	}
-	if (lnState == LN_ST_TX_COLLISION) {
+	if (lnState == LN_UART_STATE::LN_ST_TX_COLLISION) {
 		return LN_COLLISION;
 	}
 	return LN_UNKNOWN_ERROR; // everything else is an error

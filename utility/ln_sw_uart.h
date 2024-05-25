@@ -141,11 +141,12 @@
 #  endif
 #endif
 
-#define LN_ST_IDLE            0   // net is free for anyone to start transmission
-#define LN_ST_CD_BACKOFF      1   // timer interrupt is counting backoff bits
-#define LN_ST_TX_COLLISION    2   // just sending break after creating a collision
-#define LN_ST_TX              3   // transmitting a packet
-#define LN_ST_RX              4   // receiving bytes
+//Moved to an ENUM inside of loconet.h, this to allow Uart LN status retrieval from the Loconet Class
+//#define LN_ST_IDLE            0   // net is free for anyone to start transmission
+//#define LN_ST_CD_BACKOFF      1   // timer interrupt is counting backoff bits
+//#define LN_ST_TX_COLLISION    2   // just sending break after creating a collision
+//#define LN_ST_TX              3   // transmitting a packet
+//#define LN_ST_RX              4   // receiving bytes
 
 #define LN_COLLISION_TICKS 15
 #define LN_TX_RETRIES_MAX  25
@@ -175,6 +176,7 @@
 // ATTENTION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 void initLocoNetHardware(LnBuf* RxBuffer);
+LN_UART_STATE uartLoconetState();
 void setTxPortAndPin(LnPortAddrType newTxPort, uint8_t newTxPin);
 LN_STATUS sendLocoNetPacketTry(lnMsg* TxData, unsigned char ucPrioDelay);
 #ifdef ESP8266

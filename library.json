@@ -1,6 +1,6 @@
 {
   "name": "LocoNet",
-  "version": "1.1.13",
+  "version": "1.1.14",
   "keywords": "AVR, Railroad, LocoNet, ESP8266, STM32F1",
   "description": "Enables Digitrax LocoNet Communication. This library allows you to interface to a LocoNet network and send/receive LocoNet commands. The library currently supports the AVR ATTiny84 & ATMega88/168/328/32u4 using the 16-Bit Timer1 and ICP1. It also supports the Mega2560 using Timer5 and ICP5. It also supports the STM32F1 using TIM2 and the ESP8266 uses an hardware interrupt driven software uart.",
   "repository": {

@@ -3,6 +3,7 @@
 LocoNetClass	KEYWORD1
 LocoNet	KEYWORD1
 LN_STATUS	KEYWORD1
+LN_UART_STATE	KEYWORD1
 LnBuf	KEYWORD1
 LnBufStats	KEYWORD1
 
@@ -21,6 +22,7 @@ notifySwitchReport	KEYWORD2
 notifySwitchOutputsReport	KEYWORD2
 notifySwitchState	KEYWORD2
 notifyLongAck	KEYWORD2
+uartState	KEYWORD2
 
 initLnBuf	KEYWORD2
 recvLnMsg	KEYWORD2
